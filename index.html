@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centralino AI - Dashboard Ordini</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --accent: #6366f1;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .header h1 span {
+      color: var(--accent);
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    .filters {
+      padding: 0 2rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .orders-container {
+      padding: 1.5rem 2rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .order-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .order-card:hover {
+      border-color: var(--accent);
+    }
+
+    .order-info h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .order-info .phone {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .order-items {
+      list-style: none;
+      margin-bottom: 0.75rem;
+    }
+
+    .order-items li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+    }
+
+    .order-items li:last-child {
+      border-bottom: none;
+    }
+
+    .order-notes {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .order-time {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .order-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .status-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-nuovo { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .status-in_preparazione { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .status-completato { background: rgba(34,197,94,0.15); color: var(--green); }
+    .status-annullato { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    .action-btn {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .action-btn.danger:hover {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* ===== Guida Setup ===== */
+    .guide-toggle {
+      padding: 0.6rem 1.2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .guide-toggle:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .guide-panel {
+      display: none;
+      margin: 1.5rem 2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .guide-panel.open {
+      display: block;
+    }
+
+    .guide-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .guide-header h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .guide-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .guide-steps {
+      padding: 0.5rem 0;
+    }
+
+    .guide-step {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .guide-step:last-child {
+      border-bottom: none;
+    }
+
+    .guide-step:hover {
+      background: rgba(99,102,241,0.05);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.15);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .step-number.done {
+      background: rgba(34,197,94,0.15);
+      color: var(--green);
+    }
+
+    .step-title {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .step-subtitle {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    .step-arrow {
+      margin-left: auto;
+      color: var(--muted);
+      transition: transform 0.2s;
+      font-size: 0.8rem;
+    }
+
+    .guide-step.expanded .step-arrow {
+      transform: rotate(90deg);
+    }
+
+    .step-content {
+      display: none;
+      padding: 1rem 0 0.5rem 3.25rem;
+      line-height: 1.7;
+      font-size: 0.9rem;
+    }
+
+    .guide-step.expanded .step-content {
+      display: block;
+    }
+
+    .step-content ol, .step-content ul {
+      padding-left: 1.25rem;
+      margin: 0.5rem 0;
+    }
+
+    .step-content li {
+      margin-bottom: 0.4rem;
+    }
+
+    .step-content code {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .step-content .code-block {
+      background: #12141c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: var(--green);
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    .step-content a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .step-content a:hover {
+      text-decoration: underline;
+    }
+
+    .step-content .hint {
+      background: rgba(234,179,8,0.1);
+      border-left: 3px solid var(--yellow);
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      color: var(--yellow);
+    }
+
+    .step-content .env-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+    }
+
+    .step-content .env-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: rgba(99,102,241,0.08);
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .step-content .env-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step-content .env-table td:first-child {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      .header { padding: 1rem; }
+      .stats-grid { padding: 1rem; }
+      .filters { padding: 0 1rem; }
+      .orders-container { padding: 1rem; }
+      .order-card { grid-template-columns: 1fr; }
+      .guide-panel { margin: 1rem; }
+      .guide-header { padding: 1rem 1.25rem; }
+      .guide-step { padding: 1rem 1.25rem; }
+      .step-content { padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>IA</span>-CALL Centralino</h1>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <button class="guide-toggle" onclick="toggleGuide()">Guida Setup</button>
+      <div>
+        <span class="live-dot"></span>
+        <span id="connection-status">Connesso</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GUIDA SETUP STEP-BY-STEP ===== -->
+  <div class="guide-panel" id="guide-panel">
+    <div class="guide-header">
+      <h2>Guida Configurazione</h2>
+      <p>Segui questi 7 passaggi per attivare il centralino AI</p>
+    </div>
+    <div class="guide-steps">
+
+      <!-- STEP 1 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <div>
+            <div class="step-title">Crea gli account</div>
+            <div class="step-subtitle">Twilio, Groq, ElevenLabs, Supabase</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Registrati gratuitamente su questi 4 servizi:</p>
+          <ol>
+            <li><a href="https://www.twilio.com/try-twilio" target="_blank">Twilio</a> &mdash; Telefonia. Ottieni un numero di telefono virtuale</li>
+            <li><a href="https://console.groq.com" target="_blank">Groq</a> &mdash; AI. Genera la tua API key dal pannello</li>
+            <li><a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> &mdash; Voce. 10.000 caratteri/mese gratis</li>
+            <li><a href="https://supabase.com" target="_blank">Supabase</a> &mdash; Database. Crea un nuovo progetto</li>
+          </ol>
+          <div class="hint">Tutti i servizi hanno un piano gratuito sufficiente per iniziare.</div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <div>
+            <div class="step-title">Configura il Database</div>
+            <div class="step-subtitle">Esegui lo schema SQL su Supabase</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Vai su <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+            <li>Seleziona il tuo progetto</li>
+            <li>Vai in <strong>SQL Editor</strong> nel menu a sinistra</li>
+            <li>Copia e incolla il contenuto del file <code>supabase-schema.sql</code></li>
+            <li>Clicca <strong>Run</strong></li>
+          </ol>
+          <p>Questo crea le tabelle <code>orders</code> e <code>call_logs</code> con gli indici e il realtime.</p>
+          <div class="hint">Dopo aver eseguito lo SQL, vai in Settings &gt; API e copia URL e anon key per il prossimo step.</div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <div>
+            <div class="step-title">Configura le variabili d'ambiente</div>
+            <div class="step-subtitle">File .env con tutte le API key</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Copia il file template e compilalo:</p>
+          <div class="code-block">cp .env.example .env</div>
+          <p>Apri <code>.env</code> e inserisci le tue credenziali:</p>
+          <table class="env-table">
+            <tr><th>Variabile</th><th>Dove trovarla</th></tr>
+            <tr><td>TWILIO_ACCOUNT_SID</td><td>Twilio Console &gt; Account Info</td></tr>
+            <tr><td>TWILIO_AUTH_TOKEN</td><td>Twilio Console &gt; Account Info</td></tr>
+            <tr><td>TWILIO_PHONE_NUMBER</td><td>Il numero Twilio (formato +39...)</td></tr>
+            <tr><td>GROQ_API_KEY</td><td>console.groq.com &gt; API Keys</td></tr>
+            <tr><td>ELEVENLABS_API_KEY</td><td>elevenlabs.io &gt; Profile &gt; API Keys</td></tr>
+            <tr><td>ELEVENLABS_VOICE_ID</td><td>elevenlabs.io &gt; Voice Library (opzionale)</td></tr>
+            <tr><td>SUPABASE_URL</td><td>Supabase &gt; Settings &gt; API &gt; URL</td></tr>
+            <tr><td>SUPABASE_ANON_KEY</td><td>Supabase &gt; Settings &gt; API &gt; anon key</td></tr>
+            <tr><td>BASE_URL</td><td>Il tuo URL pubblico (vedi Step 5)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <div>
+            <div class="step-title">Installa e avvia il server</div>
+            <div class="step-subtitle">npm install &amp; npm start</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Apri il terminale nella cartella del progetto ed esegui:</p>
+          <div class="code-block">npm install
+npm start</div>
+          <p>Dovresti vedere:</p>
+          <div class="code-block" style="color: var(--accent);">CENTRALINO AI ATTIVO
+Server:    http://localhost:3000
+Dashboard: http://localhost:3000</div>
+          <div class="hint">Per lo sviluppo usa <code>npm run dev</code> &mdash; riavvia automaticamente ad ogni modifica.</div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">5</div>
+          <div>
+            <div class="step-title">Esponi il server con ngrok</div>
+            <div class="step-subtitle">Twilio deve raggiungere il tuo server</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Twilio ha bisogno di un URL pubblico per inviare le chiamate al tuo server.</p>
+          <ol>
+            <li>Installa <a href="https://ngrok.com/download" target="_blank">ngrok</a> (gratuito)</li>
+            <li>In un nuovo terminale, esegui:</li>
+          </ol>
+          <div class="code-block">ngrok http 3000</div>
+          <p>ngrok ti mostrera un URL tipo:</p>
+          <div class="code-block" style="color: var(--yellow);">https://a1b2c3d4.ngrok-free.app</div>
+          <ol start="3">
+            <li>Copia quell'URL HTTPS</li>
+            <li>Aggiorna <code>BASE_URL</code> nel tuo file <code>.env</code></li>
+            <li>Riavvia il server</li>
+          </ol>
+          <div class="hint">In produzione puoi usare un dominio fisso o deployare su Railway, Render, ecc.</div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">6</div>
+          <div>
+            <div class="step-title">Configura il webhook Twilio</div>
+            <div class="step-subtitle">Collega il numero di telefono al server</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Vai su <a href="https://console.twilio.com/us1/develop/phone-numbers/manage/incoming" target="_blank">Twilio Console</a> &gt; Phone Numbers</li>
+            <li>Clicca sul tuo numero di telefono</li>
+            <li>Nella sezione <strong>Voice Configuration</strong>:</li>
+          </ol>
+          <table class="env-table">
+            <tr><th>Impostazione</th><th>Valore</th></tr>
+            <tr><td>A call comes in</td><td>Webhook</td></tr>
+            <tr><td>URL</td><td>https://tuo-url.ngrok-free.app/voice/incoming</td></tr>
+            <tr><td>HTTP Method</td><td>POST</td></tr>
+          </table>
+          <ol start="4">
+            <li>Clicca <strong>Save configuration</strong></li>
+          </ol>
+          <div class="hint">Opzionale: nel campo "Call status changes" puoi aggiungere l'URL <code>/voice/status</code> per tracciare la durata delle chiamate.</div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">7</div>
+          <div>
+            <div class="step-title">Testa il sistema!</div>
+            <div class="step-subtitle">Chiama il tuo numero e fai un ordine</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Chiama il tuo numero Twilio dal telefono</li>
+            <li>L'AI ti salutera con voce naturale (ElevenLabs)</li>
+            <li>Ordina qualcosa, ad esempio: <em>"Vorrei due pizze margherita e una birra"</em></li>
+            <li>L'AI ripetera l'ordine e chiedera conferma</li>
+            <li>Conferma con <em>"Si, confermo"</em></li>
+            <li>L'ordine apparira qui nella dashboard!</li>
+          </ol>
+          <div class="hint">Se qualcosa non funziona, controlla i log nel terminale dove gira il server &mdash; gli errori vengono mostrati li.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Ordini oggi</div>
+      <div class="value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Nuovi</div>
+      <div class="value" id="stat-new" style="color: var(--accent)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">In preparazione</div>
+      <div class="value" id="stat-progress" style="color: var(--yellow)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Completati</div>
+      <div class="value" id="stat-completed" style="color: var(--green)">0</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="">Tutti</button>
+    <button class="filter-btn" data-filter="nuovo">Nuovi</button>
+    <button class="filter-btn" data-filter="in_preparazione">In preparazione</button>
+    <button class="filter-btn" data-filter="completato">Completati</button>
+    <button class="filter-btn" data-filter="annullato">Annullati</button>
+  </div>
+
+  <div class="orders-container" id="orders-list">
+    <!-- Ordini caricati dinamicamente -->
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let currentFilter = '';
+    let knownOrderIds = new Set();
+
+    // ===== Caricamento ordini =====
+    async function loadOrders() {
+      try {
+        const url = currentFilter
+          ? `${API_BASE}/api/orders?status=${currentFilter}`
+          : `${API_BASE}/api/orders`;
+
+        const res = await fetch(url);
+        const orders = await res.json();
+
+        // Controlla nuovi ordini per notifica
+        orders.forEach(order => {
+          if (!knownOrderIds.has(order.id)) {
+            if (knownOrderIds.size > 0) {
+              showNotification(`Nuovo ordine da ${order.customer_name || order.phone_number}!`);
+            }
+            knownOrderIds.add(order.id);
+          }
+        });
+
+        renderOrders(orders);
+      } catch (err) {
+        console.error('Errore caricamento ordini:', err);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/api/stats`);
+        const stats = await res.json();
+
+        document.getElementById('stat-total').textContent = stats.total_orders;
+        document.getElementById('stat-new').textContent = stats.new_orders;
+        document.getElementById('stat-progress').textContent = stats.in_progress;
+        document.getElementById('stat-completed').textContent = stats.completed;
+      } catch (err) {
+        console.error('Errore caricamento stats:', err);
+      }
+    }
+
+    // ===== Rendering =====
+    function renderOrders(orders) {
+      const container = document.getElementById('orders-list');
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <h3>Nessun ordine</h3>
+            <p>Gli ordini ricevuti via telefono appariranno qui</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => `
+        <div class="order-card" data-id="${order.id}">
+          <div class="order-info">
+            <h3>${order.customer_name || 'Cliente'}</h3>
+            <div class="phone">${order.phone_number}</div>
+            <ul class="order-items">
+              ${(order.items || []).map(item => `
+                <li>
+                  <span>${item.quantity}x ${item.name}</span>
+                  ${item.price > 0 ? `<span>&euro;${item.price.toFixed(2)}</span>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+            ${order.notes ? `<div class="order-notes">${order.notes}</div>` : ''}
+            ${order.total ? `<div style="font-weight:700; margin-top:0.5rem">Totale: &euro;${parseFloat(order.total).toFixed(2)}</div>` : ''}
+            <div class="order-time">${formatTime(order.created_at)}</div>
+          </div>
+          <div class="order-actions">
+            <span class="status-badge status-${order.status}">${formatStatus(order.status)}</span>
+            ${getActionButtons(order)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getActionButtons(order) {
+      const buttons = [];
+
+      if (order.status === 'nuovo') {
+        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'in_preparazione')">Prepara</button>`);
+        buttons.push(`<button class="action-btn danger" onclick="updateStatus('${order.id}', 'annullato')">Annulla</button>`);
+      } else if (order.status === 'in_preparazione') {
+        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'completato')">Completato</button>`);
+      }
+
+      buttons.push(`<button class="action-btn danger" onclick="deleteOrder('${order.id}')">Elimina</button>`);
+
+      return buttons.join('');
+    }
+
+    function formatStatus(status) {
+      const map = {
+        'nuovo': 'Nuovo',
+        'in_preparazione': 'In preparazione',
+        'completato': 'Completato',
+        'annullato': 'Annullato'
+      };
+      return map[status] || status;
+    }
+
+    function formatTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString('it-IT', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // ===== Azioni =====
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`${API_BASE}/api/orders/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadOrders();
+        loadStats();
+      } catch (err) {
+        console.error('Errore aggiornamento:', err);
+      }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('Eliminare questo ordine?')) return;
+
+      try {
+        await fetch(`${API_BASE}/api/orders/${id}`, { method: 'DELETE' });
+        knownOrderIds.delete(id);
+        loadOrders();
+        loadStats();
+      } catch (err) {
+        console.error('Errore eliminazione:', err);
+      }
+    }
+
+    // ===== Notifiche =====
+    function showNotification(message) {
+      const el = document.getElementById('notification');
+      el.textContent = message;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    // ===== Filtri =====
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        loadOrders();
+      });
+    });
+
+    // ===== Polling per aggiornamenti in tempo reale =====
+    function startPolling() {
+      loadOrders();
+      loadStats();
+      setInterval(() => {
+        loadOrders();
+        loadStats();
+      }, 5000);
+    }
+
+    // ===== Supabase Realtime (opzionale, se il client JS è caricato) =====
+    // Per abilitare il realtime, aggiungi il client Supabase via CDN
+    // e sostituisci il polling con le subscription
+
+    // ===== Guida Setup =====
+    function toggleGuide() {
+      const panel = document.getElementById('guide-panel');
+      panel.classList.toggle('open');
+      const btn = document.querySelector('.guide-toggle');
+      btn.textContent = panel.classList.contains('open') ? 'Chiudi Guida' : 'Guida Setup';
+    }
+
+    function toggleStep(stepEl) {
+      const wasExpanded = stepEl.classList.contains('expanded');
+      // Chiudi tutti gli altri step
+      document.querySelectorAll('.guide-step').forEach(s => s.classList.remove('expanded'));
+      // Toggle questo step
+      if (!wasExpanded) {
+        stepEl.classList.add('expanded');
+      }
+    }
+
+    // ===== Avvio =====
+    startPolling();
+  </script>
+</body>
+</html>
