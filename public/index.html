@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centralino AI - Dashboard Ordini</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --accent: #6366f1;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .header h1 span {
+      color: var(--accent);
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    .filters {
+      padding: 0 2rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .orders-container {
+      padding: 1.5rem 2rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .order-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .order-card:hover {
+      border-color: var(--accent);
+    }
+
+    .order-info h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .order-info .phone {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .order-items {
+      list-style: none;
+      margin-bottom: 0.75rem;
+    }
+
+    .order-items li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+    }
+
+    .order-items li:last-child {
+      border-bottom: none;
+    }
+
+    .order-notes {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .order-time {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .order-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .status-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-nuovo { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .status-in_preparazione { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .status-completato { background: rgba(34,197,94,0.15); color: var(--green); }
+    .status-annullato { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    .action-btn {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .action-btn.danger:hover {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    @media (max-width: 768px) {
+      .header { padding: 1rem; }
+      .stats-grid { padding: 1rem; }
+      .filters { padding: 0 1rem; }
+      .orders-container { padding: 1rem; }
+      .order-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>IA</span>-CALL Centralino</h1>
+    <div>
+      <span class="live-dot"></span>
+      <span id="connection-status">Connesso</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Ordini oggi</div>
+      <div class="value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Nuovi</div>
+      <div class="value" id="stat-new" style="color: var(--accent)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">In preparazione</div>
+      <div class="value" id="stat-progress" style="color: var(--yellow)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Completati</div>
+      <div class="value" id="stat-completed" style="color: var(--green)">0</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="">Tutti</button>
+    <button class="filter-btn" data-filter="nuovo">Nuovi</button>
+    <button class="filter-btn" data-filter="in_preparazione">In preparazione</button>
+    <button class="filter-btn" data-filter="completato">Completati</button>
+    <button class="filter-btn" data-filter="annullato">Annullati</button>
+  </div>
+
+  <div class="orders-container" id="orders-list">
+    <!-- Ordini caricati dinamicamente -->
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let currentFilter = '';
+    let knownOrderIds = new Set();
+
+    // ===== Caricamento ordini =====
+    async function loadOrders() {
+      try {
+        const url = currentFilter
+          ? `${API_BASE}/api/orders?status=${currentFilter}`
+          : `${API_BASE}/api/orders`;
+
+        const res = await fetch(url);
+        const orders = await res.json();
+
+        // Controlla nuovi ordini per notifica
+        orders.forEach(order => {
+          if (!knownOrderIds.has(order.id)) {
+            if (knownOrderIds.size > 0) {
+              showNotification(`Nuovo ordine da ${order.customer_name || order.phone_number}!`);
+            }
+            knownOrderIds.add(order.id);
+          }
+        });
+
+        renderOrders(orders);
+      } catch (err) {
+        console.error('Errore caricamento ordini:', err);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/api/stats`);
+        const stats = await res.json();
+
+        document.getElementById('stat-total').textContent = stats.total_orders;
+        document.getElementById('stat-new').textContent = stats.new_orders;
+        document.getElementById('stat-progress').textContent = stats.in_progress;
+        document.getElementById('stat-completed').textContent = stats.completed;
+      } catch (err) {
+        console.error('Errore caricamento stats:', err);
+      }
+    }
+
+    // ===== Rendering =====
+    function renderOrders(orders) {
+      const container = document.getElementById('orders-list');
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <h3>Nessun ordine</h3>
+            <p>Gli ordini ricevuti via telefono appariranno qui</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => `
+        <div class="order-card" data-id="${order.id}">
+          <div class="order-info">
+            <h3>${order.customer_name || 'Cliente'}</h3>
+            <div class="phone">${order.phone_number}</div>
+            <ul class="order-items">
+              ${(order.items || []).map(item => `
+                <li>
+                  <span>${item.quantity}x ${item.name}</span>
+                  ${item.price > 0 ? `<span>&euro;${item.price.toFixed(2)}</span>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+            ${order.notes ? `<div class="order-notes">${order.notes}</div>` : ''}
+            ${order.total ? `<div style="font-weight:700; margin-top:0.5rem">Totale: &euro;${parseFloat(order.total).toFixed(2)}</div>` : ''}
+            <div class="order-time">${formatTime(order.created_at)}</div>
+          </div>
+          <div class="order-actions">
+            <span class="status-badge status-${order.status}">${formatStatus(order.status)}</span>
+            ${getActionButtons(order)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getActionButtons(order) {
+      const buttons = [];
+
+      if (order.status === 'nuovo') {
+        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'in_preparazione')">Prepara</button>`);
+        buttons.push(`<button class="action-btn danger" onclick="updateStatus('${order.id}', 'annullato')">Annulla</button>`);
+      } else if (order.status === 'in_preparazione') {
+        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'completato')">Completato</button>`);
+      }
+
+      buttons.push(`<button class="action-btn danger" onclick="deleteOrder('${order.id}')">Elimina</button>`);
+
+      return buttons.join('');
+    }
+
+    function formatStatus(status) {
+      const map = {
+        'nuovo': 'Nuovo',
+        'in_preparazione': 'In preparazione',
+        'completato': 'Completato',
+        'annullato': 'Annullato'
+      };
+      return map[status] || status;
+    }
+
+    function formatTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString('it-IT', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // ===== Azioni =====
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`${API_BASE}/api/orders/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadOrders();
+        loadStats();
+      } catch (err) {
+        console.error('Errore aggiornamento:', err);
+      }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('Eliminare questo ordine?')) return;
+
+      try {
+        await fetch(`${API_BASE}/api/orders/${id}`, { method: 'DELETE' });
+        knownOrderIds.delete(id);
+        loadOrders();
+        loadStats();
+      } catch (err) {
+        console.error('Errore eliminazione:', err);
+      }
+    }
+
+    // ===== Notifiche =====
+    function showNotification(message) {
+      const el = document.getElementById('notification');
+      el.textContent = message;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    // ===== Filtri =====
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        loadOrders();
+      });
+    });
+
+    // ===== Polling per aggiornamenti in tempo reale =====
+    function startPolling() {
+      loadOrders();
+      loadStats();
+      setInterval(() => {
+        loadOrders();
+        loadStats();
+      }, 5000);
+    }
+
+    // ===== Supabase Realtime (opzionale, se il client JS è caricato) =====
+    // Per abilitare il realtime, aggiungi il client Supabase via CDN
+    // e sostituisci il polling con le subscription
+
+    // ===== Avvio =====
+    startPolling();
+  </script>
+</body>
+</html>
