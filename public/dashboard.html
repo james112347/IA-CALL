@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - IA-CALL</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a; --text: #e4e4e7;
+      --muted: #71717a; --accent: #6366f1; --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.3rem; font-weight: 700; }
+    .header h1 span { color: var(--accent); }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+    .tenant-name { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+    .live-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; margin-right: 6px; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* TABS */
+    .tabs { display: flex; gap: 0; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 2rem; }
+    .tab { padding: 0.8rem 1.5rem; font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* PANELS */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; padding: 1.5rem 2rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+    .stat-card .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+
+    /* FILTERS */
+    .filters { padding: 0 2rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .filter-btn { padding: 0.5rem 1rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .filter-btn:hover, .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    /* ORDERS */
+    .orders-container { padding: 1.5rem 2rem; display: grid; gap: 1rem; }
+    .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem; transition: border-color 0.2s; }
+    .order-card:hover { border-color: var(--accent); }
+    .order-info h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .order-info .phone { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .order-items { list-style: none; margin-bottom: 0.75rem; }
+    .order-items li { padding: 0.3rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.95rem; }
+    .order-items li:last-child { border-bottom: none; }
+    .order-notes { color: var(--muted); font-style: italic; font-size: 0.85rem; margin-top: 0.5rem; }
+    .order-time { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
+    .order-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+    .status-badge { padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+    .status-nuovo { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .status-in_preparazione { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .status-completato { background: rgba(34,197,94,0.15); color: var(--green); }
+    .status-annullato { background: rgba(239,68,68,0.15); color: var(--red); }
+    .action-btn { padding: 0.4rem 0.8rem; border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap; }
+    .action-btn:hover { background: var(--accent); border-color: var(--accent); }
+    .action-btn.danger:hover { background: var(--red); border-color: var(--red); }
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* SETTINGS */
+    .settings-container { padding: 2rem; max-width: 700px; }
+    .settings-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .settings-section h3 { font-size: 1.05rem; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--muted); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem; outline: none; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .btn { display: inline-block; padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #818cf8; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: var(--red); color: white; }
+
+    /* MENU EDITOR */
+    .menu-item-row { display: grid; grid-template-columns: 1fr 100px 40px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+    .menu-item-row input { padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem; }
+    .menu-item-row button { padding: 0.5rem; background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--red); cursor: pointer; font-size: 0.9rem; }
+
+    /* USAGE */
+    .usage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .usage-card { background: var(--bg); border-radius: 8px; padding: 1rem; text-align: center; }
+    .usage-card .u-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .usage-card .u-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* NOTIFICATION */
+    .notification { position: fixed; top: 20px; right: 20px; background: var(--accent); color: white; padding: 1rem 1.5rem; border-radius: 10px; font-weight: 600; transform: translateX(400px); transition: transform 0.3s ease; z-index: 1000; }
+    .notification.show { transform: translateX(0); }
+
+    /* PHONE STATUS */
+    .phone-status { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.85rem; }
+    .phone-active { background: rgba(34,197,94,0.15); color: var(--green); }
+    .phone-pending { background: rgba(234,179,8,0.15); color: var(--yellow); }
+
+    .save-msg { color: var(--green); font-size: 0.85rem; margin-left: 1rem; display: none; }
+    .save-msg.visible { display: inline; }
+
+    @media (max-width: 768px) {
+      .header { padding: 1rem; }
+      .stats-grid { padding: 1rem; }
+      .filters { padding: 0 1rem; }
+      .orders-container { padding: 1rem; }
+      .order-card { grid-template-columns: 1fr; }
+      .settings-container { padding: 1rem; }
+      .tabs { padding: 0 1rem; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>IA</span>-CALL</h1>
+    <div class="header-right">
+      <span class="tenant-name" id="tenant-name"></span>
+      <div>
+        <span class="live-dot"></span>
+        <span style="font-size:0.85rem" id="phone-display"></span>
+      </div>
+      <button class="btn btn-outline" onclick="logout()" style="font-size:0.8rem;padding:0.4rem 0.8rem">Esci</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="orders">Ordini</button>
+    <button class="tab" data-tab="settings">Impostazioni</button>
+    <button class="tab" data-tab="menu">Menu</button>
+    <button class="tab" data-tab="usage">Utilizzo</button>
+  </div>
+
+  <!-- ===== ORDINI ===== -->
+  <div class="panel active" id="panel-orders">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Ordini oggi</div><div class="value" id="stat-total">0</div></div>
+      <div class="stat-card"><div class="label">Nuovi</div><div class="value" id="stat-new" style="color:var(--accent)">0</div></div>
+      <div class="stat-card"><div class="label">In preparazione</div><div class="value" id="stat-progress" style="color:var(--yellow)">0</div></div>
+      <div class="stat-card"><div class="label">Completati</div><div class="value" id="stat-completed" style="color:var(--green)">0</div></div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" data-filter="">Tutti</button>
+      <button class="filter-btn" data-filter="nuovo">Nuovi</button>
+      <button class="filter-btn" data-filter="in_preparazione">In preparazione</button>
+      <button class="filter-btn" data-filter="completato">Completati</button>
+      <button class="filter-btn" data-filter="annullato">Annullati</button>
+    </div>
+    <div class="orders-container" id="orders-list"></div>
+  </div>
+
+  <!-- ===== IMPOSTAZIONI ===== -->
+  <div class="panel" id="panel-settings">
+    <div class="settings-container">
+      <div class="settings-section">
+        <h3>Informazioni attivita</h3>
+        <div class="form-group">
+          <label>Nome attivita</label>
+          <input type="text" id="set-name">
+        </div>
+        <div class="form-group">
+          <label>Tipo attivita</label>
+          <select id="set-type">
+            <option value="ristorante">Ristorante / Pizzeria</option>
+            <option value="bar">Bar / Caffe</option>
+            <option value="negozio">Negozio / Alimentari</option>
+            <option value="farmacia">Farmacia</option>
+            <option value="altro">Altro</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Salva</button>
+        <span class="save-msg" id="save-msg-info">Salvato!</span>
+      </div>
+
+      <div class="settings-section">
+        <h3>Numero di telefono</h3>
+        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">Il numero viene assegnato dall'amministratore della piattaforma.</p>
+        <div id="phone-status-section"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Prompt AI personalizzato</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Personalizza come l'assistente AI si comporta al telefono. Lascia vuoto per usare il prompt predefinito.</p>
+        <div class="form-group">
+          <textarea id="set-prompt" rows="6" placeholder="es. Sei l'assistente telefonico di Pizzeria da Mario. Saluta sempre i clienti con 'Buongiorno da Pizzeria da Mario!'..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="savePrompt()">Salva prompt</button>
+        <span class="save-msg" id="save-msg-prompt">Salvato!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MENU ===== -->
+  <div class="panel" id="panel-menu">
+    <div class="settings-container">
+      <div class="settings-section">
+        <h3>Gestisci il tuo menu</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">L'AI usera questi piatti e prezzi per informare i clienti e creare gli ordini.</p>
+        <div id="menu-items"></div>
+        <button class="btn btn-outline" onclick="addMenuItem()" style="margin-top:0.5rem">+ Aggiungi piatto</button>
+        <div style="margin-top:1rem">
+          <button class="btn btn-primary" onclick="saveMenu()">Salva menu</button>
+          <span class="save-msg" id="save-msg-menu">Salvato!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== UTILIZZO ===== -->
+  <div class="panel" id="panel-usage">
+    <div class="settings-container">
+      <div class="settings-section">
+        <h3>Utilizzo questo mese</h3>
+        <div class="usage-grid" id="usage-grid">
+          <div class="usage-card"><div class="u-value" id="u-calls">0</div><div class="u-label">Chiamate</div></div>
+          <div class="usage-card"><div class="u-value" id="u-orders">0</div><div class="u-label">Ordini</div></div>
+          <div class="usage-card"><div class="u-value" id="u-tts">0</div><div class="u-label">Caratteri TTS</div></div>
+          <div class="usage-card"><div class="u-value" id="u-tokens">0</div><div class="u-label">Token AI</div></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Il tuo piano</h3>
+        <div id="plan-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const API = window.location.origin;
+    const TOKEN = localStorage.getItem('ia_token');
+    let currentFilter = '';
+    let knownOrderIds = new Set();
+    let tenantData = null;
+
+    if (!TOKEN) { window.location.href = '/'; }
+
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` };
+
+    // ===== INIT =====
+    async function init() {
+      try {
+        const res = await fetch(`${API}/api/auth/me`, { headers });
+        if (!res.ok) { logout(); return; }
+        const data = await res.json();
+        document.getElementById('tenant-name').textContent = data.tenant ? data.tenant.name : '';
+        if (data.tenant && data.tenant.phone_number) {
+          document.getElementById('phone-display').textContent = data.tenant.phone_number;
+        } else {
+          document.getElementById('phone-display').textContent = 'In attesa numero';
+        }
+        tenantData = data.tenant;
+        loadSettings();
+        startPolling();
+      } catch { logout(); }
+    }
+
+    // ===== TABS =====
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+        if (tab.dataset.tab === 'usage') loadUsage();
+        if (tab.dataset.tab === 'settings') loadSettings();
+        if (tab.dataset.tab === 'menu') loadMenu();
+      });
+    });
+
+    // ===== ORDINI =====
+    async function loadOrders() {
+      try {
+        const url = currentFilter ? `${API}/api/orders?status=${currentFilter}` : `${API}/api/orders`;
+        const res = await fetch(url, { headers });
+        const orders = await res.json();
+        orders.forEach(order => {
+          if (!knownOrderIds.has(order.id)) {
+            if (knownOrderIds.size > 0) showNotification(`Nuovo ordine da ${order.customer_name || order.phone_number}!`);
+            knownOrderIds.add(order.id);
+          }
+        });
+        renderOrders(orders);
+      } catch (err) { console.error('Errore:', err); }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API}/api/stats`, { headers });
+        const s = await res.json();
+        document.getElementById('stat-total').textContent = s.total_orders;
+        document.getElementById('stat-new').textContent = s.new_orders;
+        document.getElementById('stat-progress').textContent = s.in_progress;
+        document.getElementById('stat-completed').textContent = s.completed;
+      } catch {}
+    }
+
+    function renderOrders(orders) {
+      const c = document.getElementById('orders-list');
+      if (!orders.length) { c.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><h3>Nessun ordine</h3><p>Gli ordini ricevuti via telefono appariranno qui</p></div>'; return; }
+      c.innerHTML = orders.map(o => `
+        <div class="order-card">
+          <div class="order-info">
+            <h3>${o.customer_name || 'Cliente'}</h3>
+            <div class="phone">${o.phone_number}</div>
+            <ul class="order-items">${(o.items||[]).map(i => `<li><span>${i.quantity}x ${i.name}</span>${i.price>0?`<span>&euro;${i.price.toFixed(2)}</span>`:''}</li>`).join('')}</ul>
+            ${o.notes?`<div class="order-notes">${o.notes}</div>`:''}
+            ${o.total?`<div style="font-weight:700;margin-top:0.5rem">Totale: &euro;${parseFloat(o.total).toFixed(2)}</div>`:''}
+            <div class="order-time">${new Date(o.created_at).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          <div class="order-actions">
+            <span class="status-badge status-${o.status}">${{nuovo:'Nuovo',in_preparazione:'In preparazione',completato:'Completato',annullato:'Annullato'}[o.status]||o.status}</span>
+            ${o.status==='nuovo'?`<button class="action-btn" onclick="updateStatus('${o.id}','in_preparazione')">Prepara</button><button class="action-btn danger" onclick="updateStatus('${o.id}','annullato')">Annulla</button>`:''}
+            ${o.status==='in_preparazione'?`<button class="action-btn" onclick="updateStatus('${o.id}','completato')">Completato</button>`:''}
+            <button class="action-btn danger" onclick="deleteOrder('${o.id}')">Elimina</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function updateStatus(id, status) {
+      await fetch(`${API}/api/orders/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status }) });
+      loadOrders(); loadStats();
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('Eliminare questo ordine?')) return;
+      await fetch(`${API}/api/orders/${id}`, { method: 'DELETE', headers });
+      knownOrderIds.delete(id);
+      loadOrders(); loadStats();
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        loadOrders();
+      });
+    });
+
+    function startPolling() { loadOrders(); loadStats(); setInterval(() => { loadOrders(); loadStats(); }, 5000); }
+
+    // ===== SETTINGS =====
+    async function loadSettings() {
+      const res = await fetch(`${API}/api/settings`, { headers });
+      const t = await res.json();
+      tenantData = t;
+      document.getElementById('set-name').value = t.name || '';
+      document.getElementById('set-type').value = t.business_type || 'ristorante';
+      document.getElementById('set-prompt').value = t.ai_prompt || '';
+
+      const phoneEl = document.getElementById('phone-status-section');
+      if (t.phone_number) {
+        phoneEl.innerHTML = `<div class="phone-status phone-active">Attivo: ${t.phone_number}</div>`;
+      } else {
+        phoneEl.innerHTML = `<div class="phone-status phone-pending">In attesa di assegnazione - contatta l'amministratore</div>`;
+      }
+    }
+
+    async function saveSettings() {
+      await fetch(`${API}/api/settings`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ name: document.getElementById('set-name').value, business_type: document.getElementById('set-type').value })
+      });
+      const msg = document.getElementById('save-msg-info');
+      msg.classList.add('visible');
+      setTimeout(() => msg.classList.remove('visible'), 2000);
+      const res = await fetch(`${API}/api/auth/me`, { headers });
+      const data = await res.json();
+      document.getElementById('tenant-name').textContent = data.tenant ? data.tenant.name : '';
+    }
+
+    async function savePrompt() {
+      await fetch(`${API}/api/settings`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ ai_prompt: document.getElementById('set-prompt').value })
+      });
+      const msg = document.getElementById('save-msg-prompt');
+      msg.classList.add('visible');
+      setTimeout(() => msg.classList.remove('visible'), 2000);
+    }
+
+    // ===== MENU =====
+    let menuItems = [];
+
+    async function loadMenu() {
+      const res = await fetch(`${API}/api/settings`, { headers });
+      const t = await res.json();
+      menuItems = t.menu || [];
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const c = document.getElementById('menu-items');
+      if (!menuItems.length) { c.innerHTML = '<p style="color:var(--muted);font-size:0.9rem">Nessun piatto aggiunto. Clicca "Aggiungi piatto" per iniziare.</p>'; return; }
+      c.innerHTML = menuItems.map((item, i) => `
+        <div class="menu-item-row">
+          <input type="text" value="${item.name}" placeholder="Nome piatto" onchange="menuItems[${i}].name=this.value">
+          <input type="number" value="${item.price||0}" placeholder="Prezzo" step="0.50" min="0" onchange="menuItems[${i}].price=parseFloat(this.value)||0">
+          <button onclick="menuItems.splice(${i},1);renderMenu()">&times;</button>
+        </div>`).join('');
+    }
+
+    function addMenuItem() {
+      menuItems.push({ name: '', price: 0 });
+      renderMenu();
+    }
+
+    async function saveMenu() {
+      const valid = menuItems.filter(i => i.name.trim());
+      await fetch(`${API}/api/settings`, { method: 'PUT', headers, body: JSON.stringify({ menu: valid }) });
+      menuItems = valid;
+      const msg = document.getElementById('save-msg-menu');
+      msg.classList.add('visible');
+      setTimeout(() => msg.classList.remove('visible'), 2000);
+    }
+
+    // ===== USAGE =====
+    async function loadUsage() {
+      const res = await fetch(`${API}/api/usage`, { headers });
+      const u = await res.json();
+      document.getElementById('u-calls').textContent = u.calls;
+      document.getElementById('u-orders').textContent = u.orders;
+      document.getElementById('u-tts').textContent = u.tts_chars.toLocaleString();
+      document.getElementById('u-tokens').textContent = u.ai_tokens.toLocaleString();
+
+      const planEl = document.getElementById('plan-info');
+      const plan = tenantData ? tenantData.plan : 'free';
+      const planNames = { free: 'Free', starter: 'Starter', pro: 'Pro' };
+      planEl.innerHTML = `<p style="font-size:1.2rem;font-weight:700;color:var(--accent)">${planNames[plan] || plan}</p><p style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem">Per cambiare piano, contatta l'amministratore.</p>`;
+    }
+
+    // ===== UTILS =====
+    function showNotification(msg) {
+      const el = document.getElementById('notification');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    function logout() {
+      localStorage.removeItem('ia_token');
+      localStorage.removeItem('ia_user');
+      localStorage.removeItem('ia_tenant');
+      window.location.href = '/';
+    }
+
+    init();
+  </script>
+</body>
+</html>

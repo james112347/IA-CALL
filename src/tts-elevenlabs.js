@@ -4,31 +4,29 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // "Adam" default
+const DEFAULT_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
 
 const AUDIO_DIR = path.join(__dirname, '..', 'audio-cache');
 
-// Assicurati che la cartella esista
 if (!fs.existsSync(AUDIO_DIR)) {
   fs.mkdirSync(AUDIO_DIR, { recursive: true });
 }
 
 /**
  * Genera audio da testo usando ElevenLabs API.
- * Ritorna il nome del file audio generato.
+ * Supporta voiceId per-tenant.
  */
-async function textToSpeech(text) {
-  // Hash del testo per caching
-  const hash = crypto.createHash('md5').update(text).digest('hex');
+async function textToSpeech(text, voiceId) {
+  const vid = voiceId || DEFAULT_VOICE_ID;
+  const hash = crypto.createHash('md5').update(text + vid).digest('hex');
   const filename = `${hash}.mp3`;
   const filepath = path.join(AUDIO_DIR, filename);
 
-  // Se esiste già in cache, ritorna subito
   if (fs.existsSync(filepath)) {
     return filename;
   }
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${vid}`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -58,14 +56,10 @@ async function textToSpeech(text) {
   const buffer = Buffer.from(await response.arrayBuffer());
   fs.writeFileSync(filepath, buffer);
 
-  console.log(`🔊 Audio generato: ${filename} (${buffer.length} bytes)`);
+  console.log(`Audio generato: ${filename} (${buffer.length} bytes)`);
   return filename;
 }
 
-/**
- * Pulisci file audio più vecchi di maxAge (in millisecondi).
- * Default: 1 ora.
- */
 function cleanupOldAudio(maxAge = 3600000) {
   const files = fs.readdirSync(AUDIO_DIR);
   const now = Date.now();
@@ -80,7 +74,6 @@ function cleanupOldAudio(maxAge = 3600000) {
   }
 }
 
-// Pulizia automatica ogni 30 minuti
 setInterval(cleanupOldAudio, 1800000);
 
 module.exports = { textToSpeech, cleanupOldAudio };

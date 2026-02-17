@@ -6,7 +6,33 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // Stato delle conversazioni attive (in memoria, per call SID)
 const conversations = new Map();
 
-const SYSTEM_PROMPT = `Sei l'assistente telefonico di un ristorante/negozio. Il tuo compito è prendere ordini dai clienti al telefono.
+const DEFAULT_PROMPT = `Sei l'assistente telefonico di un ristorante. Il tuo compito e' prendere ordini dai clienti al telefono.`;
+
+/**
+ * Costruisce il system prompt completo per un tenant
+ */
+function buildSystemPrompt(tenant) {
+  let prompt = '';
+
+  if (tenant && tenant.ai_prompt) {
+    prompt = tenant.ai_prompt;
+  } else if (tenant) {
+    prompt = `Sei l'assistente telefonico di "${tenant.name}". Il tuo compito e' prendere ordini dai clienti al telefono.`;
+  } else {
+    prompt = DEFAULT_PROMPT;
+  }
+
+  // Aggiungi menu se presente
+  if (tenant && tenant.menu && Array.isArray(tenant.menu) && tenant.menu.length > 0) {
+    prompt += '\n\nMENU DISPONIBILE:\n';
+    for (const item of tenant.menu) {
+      const price = item.price > 0 ? ` - €${Number(item.price).toFixed(2)}` : '';
+      prompt += `- ${item.name}${price}\n`;
+    }
+    prompt += '\nUsa i prezzi del menu quando disponibili.';
+  }
+
+  prompt += `
 
 REGOLE:
 1. Saluta il cliente in modo cordiale e chiedi cosa desidera ordinare
@@ -26,16 +52,21 @@ Quando il cliente conferma l'ordine, rispondi con un JSON alla fine del messaggi
 }
 ###END_ORDER###
 
-NON inventare prezzi se non li conosci - metti 0 e il ristorante li aggiornerà.
+NON inventare prezzi se non li conosci e non sono nel menu - metti 0 e il ristorante li aggiornera.
 Se il cliente vuole annullare, rispondi con:
 ###ORDER_CANCELLED###`;
+
+  return prompt;
+}
 
 /**
  * Inizializza una nuova conversazione per una chiamata
  */
-function initConversation(callSid) {
+function initConversation(callSid, tenant) {
+  const systemPrompt = buildSystemPrompt(tenant);
   conversations.set(callSid, {
-    messages: [{ role: 'system', content: SYSTEM_PROMPT }],
+    messages: [{ role: 'system', content: systemPrompt }],
+    tenantId: tenant ? tenant.id : null,
     orderComplete: false,
     orderData: null
   });
@@ -44,11 +75,11 @@ function initConversation(callSid) {
 /**
  * Processa il messaggio del cliente e genera una risposta AI
  */
-async function processMessage(callSid, userMessage) {
+async function processMessage(callSid, userMessage, tenant) {
   let conversation = conversations.get(callSid);
 
   if (!conversation) {
-    initConversation(callSid);
+    initConversation(callSid, tenant);
     conversation = conversations.get(callSid);
   }
 
@@ -63,12 +94,12 @@ async function processMessage(callSid, userMessage) {
       max_tokens: 500
     });
 
-    const aiResponse = completion.choices[0]?.message?.content || 'Mi scusi, può ripetere?';
+    const aiResponse = completion.choices[0]?.message?.content || 'Mi scusi, puo ripetere?';
 
     // Aggiungi la risposta alla conversazione
     conversation.messages.push({ role: 'assistant', content: aiResponse });
 
-    // Controlla se l'ordine è completo
+    // Controlla se l'ordine e completo
     const orderMatch = aiResponse.match(/###ORDER_COMPLETE###\s*([\s\S]*?)\s*###END_ORDER###/);
     if (orderMatch) {
       try {
@@ -90,17 +121,22 @@ async function processMessage(callSid, userMessage) {
       .replace(/###ORDER_CANCELLED###/, '')
       .trim();
 
+    // Conta tokens per usage tracking
+    const tokensUsed = completion.usage?.total_tokens || 0;
+
     return {
       text: cleanResponse,
       orderComplete: conversation.orderComplete,
-      orderData: conversation.orderData
+      orderData: conversation.orderData,
+      tokensUsed
     };
   } catch (error) {
     console.error('Errore Groq API:', error);
     return {
-      text: 'Mi scusi, ho avuto un problema tecnico. Può ripetere il suo ordine?',
+      text: 'Mi scusi, ho avuto un problema tecnico. Puo ripetere il suo ordine?',
       orderComplete: false,
-      orderData: null
+      orderData: null,
+      tokensUsed: 0
     };
   }
 }
@@ -108,9 +144,9 @@ async function processMessage(callSid, userMessage) {
 /**
  * Genera il saluto iniziale
  */
-async function getGreeting(callSid) {
-  initConversation(callSid);
-  return processMessage(callSid, 'Ciao, vorrei fare un ordine.');
+async function getGreeting(callSid, tenant) {
+  initConversation(callSid, tenant);
+  return processMessage(callSid, 'Ciao, vorrei fare un ordine.', tenant);
 }
 
 /**
@@ -126,6 +162,14 @@ function getTranscript(callSid) {
 }
 
 /**
+ * Ottieni il tenantId della conversazione
+ */
+function getConversationTenantId(callSid) {
+  const conversation = conversations.get(callSid);
+  return conversation ? conversation.tenantId : null;
+}
+
+/**
  * Pulisci la conversazione dalla memoria
  */
 function cleanupConversation(callSid) {
@@ -137,5 +181,6 @@ module.exports = {
   processMessage,
   getGreeting,
   getTranscript,
+  getConversationTenantId,
   cleanupConversation
 };

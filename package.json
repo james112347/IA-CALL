@@ -1,7 +1,7 @@
 {
   "name": "ia-call",
-  "version": "1.0.0",
-  "description": "Centralino AI - Sistema di ordinazione telefonica con intelligenza artificiale",
+  "version": "2.0.0",
+  "description": "IA-CALL - Piattaforma SaaS di centralino AI per ordinazioni telefoniche",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -9,10 +9,12 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "groq-sdk": "^0.7.0",
+    "jsonwebtoken": "^9.0.2",
     "twilio": "^5.3.0"
   },
   "devDependencies": {

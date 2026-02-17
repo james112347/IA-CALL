@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Centralino AI - Dashboard Ordini</title>
+  <title>IA-CALL - Centralino AI per il tuo business</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,10 +14,10 @@
       --text: #e4e4e7;
       --muted: #71717a;
       --accent: #6366f1;
+      --accent-light: #818cf8;
       --green: #22c55e;
       --yellow: #eab308;
       --red: #ef4444;
-      --blue: #3b82f6;
     }
 
     body {
@@ -25,868 +25,733 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      line-height: 1.6;
     }
 
-    .header {
-      background: var(--card);
+    /* ===== NAV ===== */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(15, 17, 23, 0.9);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      z-index: 100;
     }
 
-    .header h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
+    .nav-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
     }
 
-    .header h1 span {
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
       color: var(--accent);
     }
 
-    .live-dot {
-      width: 10px;
-      height: 10px;
-      background: var(--green);
-      border-radius: 50%;
+    .btn-large {
+      padding: 0.9rem 2.5rem;
+      font-size: 1.05rem;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 8rem 2rem 5rem;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
       display: inline-block;
-      animation: pulse 2s infinite;
-      margin-right: 8px;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      padding: 1.5rem 2rem;
-    }
-
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
-    }
-
-    .stat-card .label {
-      color: var(--muted);
+      padding: 0.4rem 1rem;
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent);
+      border-radius: 20px;
       font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
     }
 
-    .stat-card .value {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-top: 0.25rem;
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
     }
 
-    .filters {
-      padding: 0 2rem;
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-buttons {
       display: flex;
-      gap: 0.5rem;
+      gap: 1rem;
+      justify-content: center;
       flex-wrap: wrap;
     }
 
-    .filter-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
+    /* ===== FEATURES ===== */
+    .section {
+      padding: 5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
-    .filter-btn:hover, .filter-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-    }
-
-    .orders-container {
-      padding: 1.5rem 2rem;
-      display: grid;
-      gap: 1rem;
-    }
-
-    .order-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      transition: border-color 0.2s;
-    }
-
-    .order-card:hover {
-      border-color: var(--accent);
-    }
-
-    .order-info h3 {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .order-info .phone {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .order-items {
-      list-style: none;
-      margin-bottom: 0.75rem;
-    }
-
-    .order-items li {
-      padding: 0.3rem 0;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.95rem;
-    }
-
-    .order-items li:last-child {
-      border-bottom: none;
-    }
-
-    .order-notes {
-      color: var(--muted);
-      font-style: italic;
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
-    }
-
-    .order-time {
-      color: var(--muted);
-      font-size: 0.8rem;
-      margin-top: 0.5rem;
-    }
-
-    .order-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      align-items: flex-end;
-    }
-
-    .status-badge {
-      padding: 0.35rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .status-nuovo { background: rgba(99,102,241,0.15); color: var(--accent); }
-    .status-in_preparazione { background: rgba(234,179,8,0.15); color: var(--yellow); }
-    .status-completato { background: rgba(34,197,94,0.15); color: var(--green); }
-    .status-annullato { background: rgba(239,68,68,0.15); color: var(--red); }
-
-    .action-btn {
-      padding: 0.4rem 0.8rem;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .action-btn:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .action-btn.danger:hover {
-      background: var(--red);
-      border-color: var(--red);
-    }
-
-    .empty-state {
+    .section-title {
       text-align: center;
-      padding: 4rem 2rem;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-sub {
+      text-align: center;
       color: var(--muted);
+      margin-bottom: 3rem;
+      font-size: 1.05rem;
     }
 
-    .empty-state .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
     }
 
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--accent);
-      color: white;
-      padding: 1rem 1.5rem;
-      border-radius: 10px;
-      font-weight: 600;
-      transform: translateX(400px);
-      transition: transform 0.3s ease;
-      z-index: 1000;
-    }
-
-    .notification.show {
-      transform: translateX(0);
-    }
-
-    /* ===== Guida Setup ===== */
-    .guide-toggle {
-      padding: 0.6rem 1.2rem;
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--accent);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .guide-toggle:hover {
-      background: var(--accent);
-      color: white;
-    }
-
-    .guide-panel {
-      display: none;
-      margin: 1.5rem 2rem;
+    .feature-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      overflow: hidden;
+      padding: 2rem;
+      transition: border-color 0.2s;
     }
 
-    .guide-panel.open {
-      display: block;
+    .feature-card:hover { border-color: var(--accent); }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      background: rgba(99, 102, 241, 0.12);
     }
 
-    .guide-header {
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid var(--border);
+    .feature-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.5rem;
     }
 
-    .guide-header h2 {
-      font-size: 1.3rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .guide-header p {
+    .feature-card p {
       color: var(--muted);
       font-size: 0.9rem;
     }
 
-    .guide-steps {
-      padding: 0.5rem 0;
+    /* ===== HOW IT WORKS ===== */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      counter-reset: step;
     }
 
-    .guide-step {
-      padding: 1.25rem 2rem;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.2s;
+    .step {
+      text-align: center;
+      position: relative;
     }
 
-    .guide-step:last-child {
-      border-bottom: none;
-    }
-
-    .guide-step:hover {
-      background: rgba(99,102,241,0.05);
-    }
-
-    .step-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .step-number {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
+    .step-num {
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      background: rgba(99,102,241,0.15);
+      background: rgba(99, 102, 241, 0.15);
       color: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin: 0 auto 1rem;
     }
 
-    .step-number.done {
-      background: rgba(34,197,94,0.15);
-      color: var(--green);
+    .step h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
     }
 
-    .step-title {
-      font-weight: 600;
-      font-size: 1rem;
-    }
-
-    .step-subtitle {
+    .step p {
       color: var(--muted);
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-
-    .step-arrow {
-      margin-left: auto;
-      color: var(--muted);
-      transition: transform 0.2s;
-      font-size: 0.8rem;
-    }
-
-    .guide-step.expanded .step-arrow {
-      transform: rotate(90deg);
-    }
-
-    .step-content {
-      display: none;
-      padding: 1rem 0 0.5rem 3.25rem;
-      line-height: 1.7;
-      font-size: 0.9rem;
-    }
-
-    .guide-step.expanded .step-content {
-      display: block;
-    }
-
-    .step-content ol, .step-content ul {
-      padding-left: 1.25rem;
-      margin: 0.5rem 0;
-    }
-
-    .step-content li {
-      margin-bottom: 0.4rem;
-    }
-
-    .step-content code {
-      background: rgba(99,102,241,0.12);
-      color: var(--accent);
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
       font-size: 0.85rem;
-      font-family: 'SF Mono', 'Fira Code', monospace;
     }
 
-    .step-content .code-block {
-      background: #12141c;
+    /* ===== PRICING ===== */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .price-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .price-card.popular {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .price-card.popular::before {
+      content: 'Popolare';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      padding: 0.2rem 1rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .price-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .price-amount {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 1rem 0;
+    }
+
+    .price-amount span {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .price-features {
+      list-style: none;
+      text-align: left;
+      margin: 1.5rem 0;
+    }
+
+    .price-features li {
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .price-features li::before {
+      content: '\2713';
+      color: var(--green);
+      margin-right: 0.5rem;
+      font-weight: 700;
+    }
+
+    /* ===== AUTH MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 440px;
+      margin: 1rem;
+    }
+
+    .modal h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--muted);
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1rem 1.25rem;
-      margin: 0.75rem 0;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.85rem;
-      color: var(--green);
-      overflow-x: auto;
-      white-space: pre;
-      line-height: 1.6;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
     }
 
-    .step-content a {
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-error {
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .form-error.visible { display: block; }
+
+    .modal-footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .modal-footer a {
       color: var(--accent);
+      cursor: pointer;
       text-decoration: none;
     }
 
-    .step-content a:hover {
-      text-decoration: underline;
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
     }
 
-    .step-content .hint {
-      background: rgba(234,179,8,0.1);
-      border-left: 3px solid var(--yellow);
-      padding: 0.75rem 1rem;
-      border-radius: 0 6px 6px 0;
-      margin: 0.75rem 0;
+    /* ===== FOOTER ===== */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
       font-size: 0.85rem;
-      color: var(--yellow);
-    }
-
-    .step-content .env-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 0.75rem 0;
-      font-size: 0.85rem;
-    }
-
-    .step-content .env-table th {
-      text-align: left;
-      padding: 0.5rem 0.75rem;
-      background: rgba(99,102,241,0.08);
-      border-bottom: 1px solid var(--border);
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .step-content .env-table td {
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .step-content .env-table td:first-child {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      color: var(--green);
-      white-space: nowrap;
     }
 
     @media (max-width: 768px) {
-      .header { padding: 1rem; }
-      .stats-grid { padding: 1rem; }
-      .filters { padding: 0 1rem; }
-      .orders-container { padding: 1rem; }
-      .order-card { grid-template-columns: 1fr; }
-      .guide-panel { margin: 1rem; }
-      .guide-header { padding: 1rem 1.25rem; }
-      .guide-step { padding: 1rem 1.25rem; }
-      .step-content { padding-left: 0; }
+      .hero h1 { font-size: 2rem; }
+      .hero { padding: 6rem 1rem 3rem; }
+      .section { padding: 3rem 1rem; }
+      nav { padding: 0.8rem 1rem; }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1><span>IA</span>-CALL Centralino</h1>
-    <div style="display:flex; align-items:center; gap:1rem;">
-      <button class="guide-toggle" onclick="toggleGuide()">Guida Setup</button>
-      <div>
-        <span class="live-dot"></span>
-        <span id="connection-status">Connesso</span>
+
+  <nav>
+    <div class="nav-logo"><span>IA</span>-CALL</div>
+    <div class="nav-links">
+      <a href="#features">Funzionalita</a>
+      <a href="#how">Come funziona</a>
+      <a href="#pricing">Prezzi</a>
+      <a href="#" onclick="openModal('login'); return false;" class="btn btn-outline">Accedi</a>
+      <a href="#" onclick="openModal('register'); return false;" class="btn btn-primary">Registrati</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-badge">Centralino AI per il tuo business</div>
+    <h1>Il tuo assistente telefonico <span>con intelligenza artificiale</span></h1>
+    <p>I tuoi clienti chiamano, l'AI risponde, prende gli ordini e li mostra nella tua dashboard. Zero configurazione tecnica.</p>
+    <div class="hero-buttons">
+      <a href="#" onclick="openModal('register'); return false;" class="btn btn-primary btn-large">Inizia gratis</a>
+      <a href="#how" class="btn btn-outline btn-large">Scopri come funziona</a>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="section" id="features">
+    <h2 class="section-title">Tutto incluso, zero complessita</h2>
+    <p class="section-sub">Non devi registrarti su nessun altro servizio. Tutto funziona dalla tua dashboard.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">T</div>
+        <h3>Numero di telefono dedicato</h3>
+        <p>Ricevi un numero di telefono italiano dedicato al tuo business. I clienti chiamano e l'AI risponde immediatamente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">V</div>
+        <h3>Voce naturale AI</h3>
+        <p>L'assistente parla con una voce naturale e realistica, non robotica. I tuoi clienti non noteranno la differenza.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">A</div>
+        <h3>AI che capisce il contesto</h3>
+        <p>L'intelligenza artificiale capisce richieste complesse, gestisce modifiche agli ordini e risponde in modo naturale.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">M</div>
+        <h3>Menu personalizzabile</h3>
+        <p>Carica il tuo menu con i prezzi. L'AI li usera per informare i clienti e calcolare i totali automaticamente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">D</div>
+        <h3>Dashboard in tempo reale</h3>
+        <p>Vedi tutti gli ordini in tempo reale, aggiorna gli stati e gestisci il tuo flusso di lavoro da un'unica interfaccia.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">S</div>
+        <h3>Statistiche e utilizzo</h3>
+        <p>Monitora chiamate, ordini e utilizzo della piattaforma. Tutto trasparente nel tuo pannello.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="section" id="how" style="background: var(--card); border-radius: 24px; border: 1px solid var(--border);">
+    <h2 class="section-title">Come funziona</h2>
+    <p class="section-sub">Attivo in 3 minuti. Nessuna competenza tecnica richiesta.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Registrati</h3>
+        <p>Crea il tuo account e inserisci il nome della tua attivita. Gratis, senza carta di credito.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Configura</h3>
+        <p>Aggiungi il tuo menu, personalizza il saluto e il comportamento dell'assistente AI.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Ricevi il numero</h3>
+        <p>Ti assegniamo un numero di telefono dedicato. Puoi anche trasferire il tuo numero esistente.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Vai live!</h3>
+        <p>I clienti chiamano e vedrai gli ordini apparire nella tua dashboard in tempo reale.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRICING ===== -->
+  <section class="section" id="pricing">
+    <h2 class="section-title">Prezzi semplici e trasparenti</h2>
+    <p class="section-sub">Inizia gratis, scala quando cresci</p>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Free</h3>
+        <p style="color:var(--muted);font-size:0.85rem">Per provare il servizio</p>
+        <div class="price-amount">&euro;0 <span>/mese</span></div>
+        <ul class="price-features">
+          <li>50 chiamate/mese</li>
+          <li>Dashboard ordini</li>
+          <li>Voce AI base</li>
+          <li>Supporto email</li>
+        </ul>
+        <a href="#" onclick="openModal('register'); return false;" class="btn btn-outline" style="width:100%">Inizia gratis</a>
+      </div>
+      <div class="price-card popular">
+        <h3>Starter</h3>
+        <p style="color:var(--muted);font-size:0.85rem">Per piccole attivita</p>
+        <div class="price-amount">&euro;29 <span>/mese</span></div>
+        <ul class="price-features">
+          <li>500 chiamate/mese</li>
+          <li>Menu personalizzabile</li>
+          <li>Voce AI premium</li>
+          <li>Statistiche avanzate</li>
+          <li>Supporto prioritario</li>
+        </ul>
+        <a href="#" onclick="openModal('register'); return false;" class="btn btn-primary" style="width:100%">Scegli Starter</a>
+      </div>
+      <div class="price-card">
+        <h3>Pro</h3>
+        <p style="color:var(--muted);font-size:0.85rem">Per business in crescita</p>
+        <div class="price-amount">&euro;79 <span>/mese</span></div>
+        <ul class="price-features">
+          <li>Chiamate illimitate</li>
+          <li>Multi-sede</li>
+          <li>Voce AI personalizzata</li>
+          <li>API webhook per integrazioni</li>
+          <li>Account manager dedicato</li>
+        </ul>
+        <a href="#" onclick="openModal('register'); return false;" class="btn btn-outline" style="width:100%">Scegli Pro</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    IA-CALL &copy; 2025 - Centralino AI per il tuo business
+  </footer>
+
+  <!-- ===== AUTH MODALS ===== -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+
+    <!-- LOGIN -->
+    <div class="modal" id="modal-login" style="display:none; position:relative;">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2>Bentornato</h2>
+      <p class="subtitle">Accedi alla tua dashboard</p>
+      <div class="form-error" id="login-error"></div>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" required placeholder="tu@tuoristorante.it">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" required placeholder="La tua password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%" id="login-btn">Accedi</button>
+      </form>
+      <div class="modal-footer">
+        Non hai un account? <a onclick="switchModal('register')">Registrati</a>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="modal" id="modal-register" style="display:none; position:relative;">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2>Crea il tuo account</h2>
+      <p class="subtitle">Inizia a ricevere ordini via AI in 3 minuti</p>
+      <div class="form-error" id="register-error"></div>
+      <form onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Nome attivita</label>
+          <input type="text" id="reg-business" required placeholder="es. Pizzeria da Mario">
+        </div>
+        <div class="form-group">
+          <label>Tipo attivita</label>
+          <select id="reg-type">
+            <option value="ristorante">Ristorante / Pizzeria</option>
+            <option value="bar">Bar / Caffe</option>
+            <option value="negozio">Negozio / Alimentari</option>
+            <option value="farmacia">Farmacia</option>
+            <option value="altro">Altro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Il tuo nome</label>
+          <input type="text" id="reg-name" required placeholder="Mario Rossi">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" required placeholder="tu@tuoristorante.it">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-password" required minlength="6" placeholder="Minimo 6 caratteri">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%" id="register-btn">Crea account</button>
+      </form>
+      <div class="modal-footer">
+        Hai gia un account? <a onclick="switchModal('login')">Accedi</a>
       </div>
     </div>
   </div>
-
-  <!-- ===== GUIDA SETUP STEP-BY-STEP ===== -->
-  <div class="guide-panel" id="guide-panel">
-    <div class="guide-header">
-      <h2>Guida Configurazione</h2>
-      <p>Segui questi 7 passaggi per attivare il centralino AI</p>
-    </div>
-    <div class="guide-steps">
-
-      <!-- STEP 1 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">1</div>
-          <div>
-            <div class="step-title">Crea gli account</div>
-            <div class="step-subtitle">Twilio, Groq, ElevenLabs, Supabase</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <p>Registrati gratuitamente su questi 4 servizi:</p>
-          <ol>
-            <li><a href="https://www.twilio.com/try-twilio" target="_blank">Twilio</a> &mdash; Telefonia. Ottieni un numero di telefono virtuale</li>
-            <li><a href="https://console.groq.com" target="_blank">Groq</a> &mdash; AI. Genera la tua API key dal pannello</li>
-            <li><a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> &mdash; Voce. 10.000 caratteri/mese gratis</li>
-            <li><a href="https://supabase.com" target="_blank">Supabase</a> &mdash; Database. Crea un nuovo progetto</li>
-          </ol>
-          <div class="hint">Tutti i servizi hanno un piano gratuito sufficiente per iniziare.</div>
-        </div>
-      </div>
-
-      <!-- STEP 2 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">2</div>
-          <div>
-            <div class="step-title">Configura il Database</div>
-            <div class="step-subtitle">Esegui lo schema SQL su Supabase</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <ol>
-            <li>Vai su <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
-            <li>Seleziona il tuo progetto</li>
-            <li>Vai in <strong>SQL Editor</strong> nel menu a sinistra</li>
-            <li>Copia e incolla il contenuto del file <code>supabase-schema.sql</code></li>
-            <li>Clicca <strong>Run</strong></li>
-          </ol>
-          <p>Questo crea le tabelle <code>orders</code> e <code>call_logs</code> con gli indici e il realtime.</p>
-          <div class="hint">Dopo aver eseguito lo SQL, vai in Settings &gt; API e copia URL e anon key per il prossimo step.</div>
-        </div>
-      </div>
-
-      <!-- STEP 3 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">3</div>
-          <div>
-            <div class="step-title">Configura le variabili d'ambiente</div>
-            <div class="step-subtitle">File .env con tutte le API key</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <p>Copia il file template e compilalo:</p>
-          <div class="code-block">cp .env.example .env</div>
-          <p>Apri <code>.env</code> e inserisci le tue credenziali:</p>
-          <table class="env-table">
-            <tr><th>Variabile</th><th>Dove trovarla</th></tr>
-            <tr><td>TWILIO_ACCOUNT_SID</td><td>Twilio Console &gt; Account Info</td></tr>
-            <tr><td>TWILIO_AUTH_TOKEN</td><td>Twilio Console &gt; Account Info</td></tr>
-            <tr><td>TWILIO_PHONE_NUMBER</td><td>Il numero Twilio (formato +39...)</td></tr>
-            <tr><td>GROQ_API_KEY</td><td>console.groq.com &gt; API Keys</td></tr>
-            <tr><td>ELEVENLABS_API_KEY</td><td>elevenlabs.io &gt; Profile &gt; API Keys</td></tr>
-            <tr><td>ELEVENLABS_VOICE_ID</td><td>elevenlabs.io &gt; Voice Library (opzionale)</td></tr>
-            <tr><td>SUPABASE_URL</td><td>Supabase &gt; Settings &gt; API &gt; URL</td></tr>
-            <tr><td>SUPABASE_ANON_KEY</td><td>Supabase &gt; Settings &gt; API &gt; anon key</td></tr>
-            <tr><td>BASE_URL</td><td>Il tuo URL pubblico (vedi Step 5)</td></tr>
-          </table>
-        </div>
-      </div>
-
-      <!-- STEP 4 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">4</div>
-          <div>
-            <div class="step-title">Installa e avvia il server</div>
-            <div class="step-subtitle">npm install &amp; npm start</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <p>Apri il terminale nella cartella del progetto ed esegui:</p>
-          <div class="code-block">npm install
-npm start</div>
-          <p>Dovresti vedere:</p>
-          <div class="code-block" style="color: var(--accent);">CENTRALINO AI ATTIVO
-Server:    http://localhost:3000
-Dashboard: http://localhost:3000</div>
-          <div class="hint">Per lo sviluppo usa <code>npm run dev</code> &mdash; riavvia automaticamente ad ogni modifica.</div>
-        </div>
-      </div>
-
-      <!-- STEP 5 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">5</div>
-          <div>
-            <div class="step-title">Esponi il server con ngrok</div>
-            <div class="step-subtitle">Twilio deve raggiungere il tuo server</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <p>Twilio ha bisogno di un URL pubblico per inviare le chiamate al tuo server.</p>
-          <ol>
-            <li>Installa <a href="https://ngrok.com/download" target="_blank">ngrok</a> (gratuito)</li>
-            <li>In un nuovo terminale, esegui:</li>
-          </ol>
-          <div class="code-block">ngrok http 3000</div>
-          <p>ngrok ti mostrera un URL tipo:</p>
-          <div class="code-block" style="color: var(--yellow);">https://a1b2c3d4.ngrok-free.app</div>
-          <ol start="3">
-            <li>Copia quell'URL HTTPS</li>
-            <li>Aggiorna <code>BASE_URL</code> nel tuo file <code>.env</code></li>
-            <li>Riavvia il server</li>
-          </ol>
-          <div class="hint">In produzione puoi usare un dominio fisso o deployare su Railway, Render, ecc.</div>
-        </div>
-      </div>
-
-      <!-- STEP 6 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">6</div>
-          <div>
-            <div class="step-title">Configura il webhook Twilio</div>
-            <div class="step-subtitle">Collega il numero di telefono al server</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <ol>
-            <li>Vai su <a href="https://console.twilio.com/us1/develop/phone-numbers/manage/incoming" target="_blank">Twilio Console</a> &gt; Phone Numbers</li>
-            <li>Clicca sul tuo numero di telefono</li>
-            <li>Nella sezione <strong>Voice Configuration</strong>:</li>
-          </ol>
-          <table class="env-table">
-            <tr><th>Impostazione</th><th>Valore</th></tr>
-            <tr><td>A call comes in</td><td>Webhook</td></tr>
-            <tr><td>URL</td><td>https://tuo-url.ngrok-free.app/voice/incoming</td></tr>
-            <tr><td>HTTP Method</td><td>POST</td></tr>
-          </table>
-          <ol start="4">
-            <li>Clicca <strong>Save configuration</strong></li>
-          </ol>
-          <div class="hint">Opzionale: nel campo "Call status changes" puoi aggiungere l'URL <code>/voice/status</code> per tracciare la durata delle chiamate.</div>
-        </div>
-      </div>
-
-      <!-- STEP 7 -->
-      <div class="guide-step" onclick="toggleStep(this)">
-        <div class="step-header">
-          <div class="step-number">7</div>
-          <div>
-            <div class="step-title">Testa il sistema!</div>
-            <div class="step-subtitle">Chiama il tuo numero e fai un ordine</div>
-          </div>
-          <div class="step-arrow">&#9654;</div>
-        </div>
-        <div class="step-content">
-          <ol>
-            <li>Chiama il tuo numero Twilio dal telefono</li>
-            <li>L'AI ti salutera con voce naturale (ElevenLabs)</li>
-            <li>Ordina qualcosa, ad esempio: <em>"Vorrei due pizze margherita e una birra"</em></li>
-            <li>L'AI ripetera l'ordine e chiedera conferma</li>
-            <li>Conferma con <em>"Si, confermo"</em></li>
-            <li>L'ordine apparira qui nella dashboard!</li>
-          </ol>
-          <div class="hint">Se qualcosa non funziona, controlla i log nel terminale dove gira il server &mdash; gli errori vengono mostrati li.</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="label">Ordini oggi</div>
-      <div class="value" id="stat-total">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Nuovi</div>
-      <div class="value" id="stat-new" style="color: var(--accent)">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">In preparazione</div>
-      <div class="value" id="stat-progress" style="color: var(--yellow)">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Completati</div>
-      <div class="value" id="stat-completed" style="color: var(--green)">0</div>
-    </div>
-  </div>
-
-  <div class="filters">
-    <button class="filter-btn active" data-filter="">Tutti</button>
-    <button class="filter-btn" data-filter="nuovo">Nuovi</button>
-    <button class="filter-btn" data-filter="in_preparazione">In preparazione</button>
-    <button class="filter-btn" data-filter="completato">Completati</button>
-    <button class="filter-btn" data-filter="annullato">Annullati</button>
-  </div>
-
-  <div class="orders-container" id="orders-list">
-    <!-- Ordini caricati dinamicamente -->
-  </div>
-
-  <div class="notification" id="notification"></div>
 
   <script>
-    const API_BASE = window.location.origin;
-    let currentFilter = '';
-    let knownOrderIds = new Set();
+    const API = window.location.origin;
 
-    // ===== Caricamento ordini =====
-    async function loadOrders() {
+    // Se gia loggato, vai alla dashboard
+    if (localStorage.getItem('ia_token')) {
+      window.location.href = '/dashboard.html';
+    }
+
+    // ===== Modal =====
+    function openModal(type) {
+      document.getElementById('modal-overlay').classList.add('active');
+      document.getElementById('modal-login').style.display = type === 'login' ? 'block' : 'none';
+      document.getElementById('modal-register').style.display = type === 'register' ? 'block' : 'none';
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    function switchModal(type) {
+      document.getElementById('modal-login').style.display = type === 'login' ? 'block' : 'none';
+      document.getElementById('modal-register').style.display = type === 'register' ? 'block' : 'none';
+      document.querySelectorAll('.form-error').forEach(el => el.classList.remove('visible'));
+    }
+
+    // ===== Login =====
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      btn.textContent = 'Accesso in corso...';
+      btn.disabled = true;
+      errEl.classList.remove('visible');
+
       try {
-        const url = currentFilter
-          ? `${API_BASE}/api/orders?status=${currentFilter}`
-          : `${API_BASE}/api/orders`;
-
-        const res = await fetch(url);
-        const orders = await res.json();
-
-        // Controlla nuovi ordini per notifica
-        orders.forEach(order => {
-          if (!knownOrderIds.has(order.id)) {
-            if (knownOrderIds.size > 0) {
-              showNotification(`Nuovo ordine da ${order.customer_name || order.phone_number}!`);
-            }
-            knownOrderIds.add(order.id);
-          }
-        });
-
-        renderOrders(orders);
-      } catch (err) {
-        console.error('Errore caricamento ordini:', err);
-      }
-    }
-
-    async function loadStats() {
-      try {
-        const res = await fetch(`${API_BASE}/api/stats`);
-        const stats = await res.json();
-
-        document.getElementById('stat-total').textContent = stats.total_orders;
-        document.getElementById('stat-new').textContent = stats.new_orders;
-        document.getElementById('stat-progress').textContent = stats.in_progress;
-        document.getElementById('stat-completed').textContent = stats.completed;
-      } catch (err) {
-        console.error('Errore caricamento stats:', err);
-      }
-    }
-
-    // ===== Rendering =====
-    function renderOrders(orders) {
-      const container = document.getElementById('orders-list');
-
-      if (orders.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="icon">📋</div>
-            <h3>Nessun ordine</h3>
-            <p>Gli ordini ricevuti via telefono appariranno qui</p>
-          </div>`;
-        return;
-      }
-
-      container.innerHTML = orders.map(order => `
-        <div class="order-card" data-id="${order.id}">
-          <div class="order-info">
-            <h3>${order.customer_name || 'Cliente'}</h3>
-            <div class="phone">${order.phone_number}</div>
-            <ul class="order-items">
-              ${(order.items || []).map(item => `
-                <li>
-                  <span>${item.quantity}x ${item.name}</span>
-                  ${item.price > 0 ? `<span>&euro;${item.price.toFixed(2)}</span>` : ''}
-                </li>
-              `).join('')}
-            </ul>
-            ${order.notes ? `<div class="order-notes">${order.notes}</div>` : ''}
-            ${order.total ? `<div style="font-weight:700; margin-top:0.5rem">Totale: &euro;${parseFloat(order.total).toFixed(2)}</div>` : ''}
-            <div class="order-time">${formatTime(order.created_at)}</div>
-          </div>
-          <div class="order-actions">
-            <span class="status-badge status-${order.status}">${formatStatus(order.status)}</span>
-            ${getActionButtons(order)}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function getActionButtons(order) {
-      const buttons = [];
-
-      if (order.status === 'nuovo') {
-        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'in_preparazione')">Prepara</button>`);
-        buttons.push(`<button class="action-btn danger" onclick="updateStatus('${order.id}', 'annullato')">Annulla</button>`);
-      } else if (order.status === 'in_preparazione') {
-        buttons.push(`<button class="action-btn" onclick="updateStatus('${order.id}', 'completato')">Completato</button>`);
-      }
-
-      buttons.push(`<button class="action-btn danger" onclick="deleteOrder('${order.id}')">Elimina</button>`);
-
-      return buttons.join('');
-    }
-
-    function formatStatus(status) {
-      const map = {
-        'nuovo': 'Nuovo',
-        'in_preparazione': 'In preparazione',
-        'completato': 'Completato',
-        'annullato': 'Annullato'
-      };
-      return map[status] || status;
-    }
-
-    function formatTime(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleString('it-IT', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-    }
-
-    // ===== Azioni =====
-    async function updateStatus(id, status) {
-      try {
-        await fetch(`${API_BASE}/api/orders/${id}`, {
-          method: 'PATCH',
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status })
+          body: JSON.stringify({
+            email: document.getElementById('login-email').value,
+            password: document.getElementById('login-password').value
+          })
         });
-        loadOrders();
-        loadStats();
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Errore di accesso';
+          errEl.classList.add('visible');
+          return;
+        }
+
+        localStorage.setItem('ia_token', data.token);
+        localStorage.setItem('ia_user', JSON.stringify(data.user));
+        localStorage.setItem('ia_tenant', JSON.stringify(data.tenant));
+
+        if (data.user.role === 'admin') {
+          window.location.href = '/admin.html';
+        } else {
+          window.location.href = '/dashboard.html';
+        }
       } catch (err) {
-        console.error('Errore aggiornamento:', err);
+        errEl.textContent = 'Errore di connessione al server';
+        errEl.classList.add('visible');
+      } finally {
+        btn.textContent = 'Accedi';
+        btn.disabled = false;
       }
     }
 
-    async function deleteOrder(id) {
-      if (!confirm('Eliminare questo ordine?')) return;
+    // ===== Register =====
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById('register-btn');
+      const errEl = document.getElementById('register-error');
+      btn.textContent = 'Creazione in corso...';
+      btn.disabled = true;
+      errEl.classList.remove('visible');
 
       try {
-        await fetch(`${API_BASE}/api/orders/${id}`, { method: 'DELETE' });
-        knownOrderIds.delete(id);
-        loadOrders();
-        loadStats();
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessName: document.getElementById('reg-business').value,
+            businessType: document.getElementById('reg-type').value,
+            name: document.getElementById('reg-name').value,
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Errore nella registrazione';
+          errEl.classList.add('visible');
+          return;
+        }
+
+        localStorage.setItem('ia_token', data.token);
+        localStorage.setItem('ia_user', JSON.stringify(data.user));
+        localStorage.setItem('ia_tenant', JSON.stringify(data.tenant));
+
+        window.location.href = '/dashboard.html';
       } catch (err) {
-        console.error('Errore eliminazione:', err);
+        errEl.textContent = 'Errore di connessione al server';
+        errEl.classList.add('visible');
+      } finally {
+        btn.textContent = 'Crea account';
+        btn.disabled = false;
       }
     }
-
-    // ===== Notifiche =====
-    function showNotification(message) {
-      const el = document.getElementById('notification');
-      el.textContent = message;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 4000);
-    }
-
-    // ===== Filtri =====
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        loadOrders();
-      });
-    });
-
-    // ===== Polling per aggiornamenti in tempo reale =====
-    function startPolling() {
-      loadOrders();
-      loadStats();
-      setInterval(() => {
-        loadOrders();
-        loadStats();
-      }, 5000);
-    }
-
-    // ===== Supabase Realtime (opzionale, se il client JS è caricato) =====
-    // Per abilitare il realtime, aggiungi il client Supabase via CDN
-    // e sostituisci il polling con le subscription
-
-    // ===== Guida Setup =====
-    function toggleGuide() {
-      const panel = document.getElementById('guide-panel');
-      panel.classList.toggle('open');
-      const btn = document.querySelector('.guide-toggle');
-      btn.textContent = panel.classList.contains('open') ? 'Chiudi Guida' : 'Guida Setup';
-    }
-
-    function toggleStep(stepEl) {
-      const wasExpanded = stepEl.classList.contains('expanded');
-      // Chiudi tutti gli altri step
-      document.querySelectorAll('.guide-step').forEach(s => s.classList.remove('expanded'));
-      // Toggle questo step
-      if (!wasExpanded) {
-        stepEl.classList.add('expanded');
-      }
-    }
-
-    // ===== Avvio =====
-    startPolling();
   </script>
 </body>
 </html>
