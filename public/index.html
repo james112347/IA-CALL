@@ -244,21 +244,416 @@
       transform: translateX(0);
     }
 
+    /* ===== Guida Setup ===== */
+    .guide-toggle {
+      padding: 0.6rem 1.2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .guide-toggle:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .guide-panel {
+      display: none;
+      margin: 1.5rem 2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .guide-panel.open {
+      display: block;
+    }
+
+    .guide-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .guide-header h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .guide-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .guide-steps {
+      padding: 0.5rem 0;
+    }
+
+    .guide-step {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .guide-step:last-child {
+      border-bottom: none;
+    }
+
+    .guide-step:hover {
+      background: rgba(99,102,241,0.05);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.15);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .step-number.done {
+      background: rgba(34,197,94,0.15);
+      color: var(--green);
+    }
+
+    .step-title {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .step-subtitle {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    .step-arrow {
+      margin-left: auto;
+      color: var(--muted);
+      transition: transform 0.2s;
+      font-size: 0.8rem;
+    }
+
+    .guide-step.expanded .step-arrow {
+      transform: rotate(90deg);
+    }
+
+    .step-content {
+      display: none;
+      padding: 1rem 0 0.5rem 3.25rem;
+      line-height: 1.7;
+      font-size: 0.9rem;
+    }
+
+    .guide-step.expanded .step-content {
+      display: block;
+    }
+
+    .step-content ol, .step-content ul {
+      padding-left: 1.25rem;
+      margin: 0.5rem 0;
+    }
+
+    .step-content li {
+      margin-bottom: 0.4rem;
+    }
+
+    .step-content code {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .step-content .code-block {
+      background: #12141c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: var(--green);
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    .step-content a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .step-content a:hover {
+      text-decoration: underline;
+    }
+
+    .step-content .hint {
+      background: rgba(234,179,8,0.1);
+      border-left: 3px solid var(--yellow);
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      color: var(--yellow);
+    }
+
+    .step-content .env-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+    }
+
+    .step-content .env-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: rgba(99,102,241,0.08);
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .step-content .env-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step-content .env-table td:first-child {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
     @media (max-width: 768px) {
       .header { padding: 1rem; }
       .stats-grid { padding: 1rem; }
       .filters { padding: 0 1rem; }
       .orders-container { padding: 1rem; }
       .order-card { grid-template-columns: 1fr; }
+      .guide-panel { margin: 1rem; }
+      .guide-header { padding: 1rem 1.25rem; }
+      .guide-step { padding: 1rem 1.25rem; }
+      .step-content { padding-left: 0; }
     }
   </style>
 </head>
 <body>
   <div class="header">
     <h1><span>IA</span>-CALL Centralino</h1>
-    <div>
-      <span class="live-dot"></span>
-      <span id="connection-status">Connesso</span>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <button class="guide-toggle" onclick="toggleGuide()">Guida Setup</button>
+      <div>
+        <span class="live-dot"></span>
+        <span id="connection-status">Connesso</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GUIDA SETUP STEP-BY-STEP ===== -->
+  <div class="guide-panel" id="guide-panel">
+    <div class="guide-header">
+      <h2>Guida Configurazione</h2>
+      <p>Segui questi 7 passaggi per attivare il centralino AI</p>
+    </div>
+    <div class="guide-steps">
+
+      <!-- STEP 1 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <div>
+            <div class="step-title">Crea gli account</div>
+            <div class="step-subtitle">Twilio, Groq, ElevenLabs, Supabase</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Registrati gratuitamente su questi 4 servizi:</p>
+          <ol>
+            <li><a href="https://www.twilio.com/try-twilio" target="_blank">Twilio</a> &mdash; Telefonia. Ottieni un numero di telefono virtuale</li>
+            <li><a href="https://console.groq.com" target="_blank">Groq</a> &mdash; AI. Genera la tua API key dal pannello</li>
+            <li><a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> &mdash; Voce. 10.000 caratteri/mese gratis</li>
+            <li><a href="https://supabase.com" target="_blank">Supabase</a> &mdash; Database. Crea un nuovo progetto</li>
+          </ol>
+          <div class="hint">Tutti i servizi hanno un piano gratuito sufficiente per iniziare.</div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <div>
+            <div class="step-title">Configura il Database</div>
+            <div class="step-subtitle">Esegui lo schema SQL su Supabase</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Vai su <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+            <li>Seleziona il tuo progetto</li>
+            <li>Vai in <strong>SQL Editor</strong> nel menu a sinistra</li>
+            <li>Copia e incolla il contenuto del file <code>supabase-schema.sql</code></li>
+            <li>Clicca <strong>Run</strong></li>
+          </ol>
+          <p>Questo crea le tabelle <code>orders</code> e <code>call_logs</code> con gli indici e il realtime.</p>
+          <div class="hint">Dopo aver eseguito lo SQL, vai in Settings &gt; API e copia URL e anon key per il prossimo step.</div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <div>
+            <div class="step-title">Configura le variabili d'ambiente</div>
+            <div class="step-subtitle">File .env con tutte le API key</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Copia il file template e compilalo:</p>
+          <div class="code-block">cp .env.example .env</div>
+          <p>Apri <code>.env</code> e inserisci le tue credenziali:</p>
+          <table class="env-table">
+            <tr><th>Variabile</th><th>Dove trovarla</th></tr>
+            <tr><td>TWILIO_ACCOUNT_SID</td><td>Twilio Console &gt; Account Info</td></tr>
+            <tr><td>TWILIO_AUTH_TOKEN</td><td>Twilio Console &gt; Account Info</td></tr>
+            <tr><td>TWILIO_PHONE_NUMBER</td><td>Il numero Twilio (formato +39...)</td></tr>
+            <tr><td>GROQ_API_KEY</td><td>console.groq.com &gt; API Keys</td></tr>
+            <tr><td>ELEVENLABS_API_KEY</td><td>elevenlabs.io &gt; Profile &gt; API Keys</td></tr>
+            <tr><td>ELEVENLABS_VOICE_ID</td><td>elevenlabs.io &gt; Voice Library (opzionale)</td></tr>
+            <tr><td>SUPABASE_URL</td><td>Supabase &gt; Settings &gt; API &gt; URL</td></tr>
+            <tr><td>SUPABASE_ANON_KEY</td><td>Supabase &gt; Settings &gt; API &gt; anon key</td></tr>
+            <tr><td>BASE_URL</td><td>Il tuo URL pubblico (vedi Step 5)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <div>
+            <div class="step-title">Installa e avvia il server</div>
+            <div class="step-subtitle">npm install &amp; npm start</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Apri il terminale nella cartella del progetto ed esegui:</p>
+          <div class="code-block">npm install
+npm start</div>
+          <p>Dovresti vedere:</p>
+          <div class="code-block" style="color: var(--accent);">CENTRALINO AI ATTIVO
+Server:    http://localhost:3000
+Dashboard: http://localhost:3000</div>
+          <div class="hint">Per lo sviluppo usa <code>npm run dev</code> &mdash; riavvia automaticamente ad ogni modifica.</div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">5</div>
+          <div>
+            <div class="step-title">Esponi il server con ngrok</div>
+            <div class="step-subtitle">Twilio deve raggiungere il tuo server</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <p>Twilio ha bisogno di un URL pubblico per inviare le chiamate al tuo server.</p>
+          <ol>
+            <li>Installa <a href="https://ngrok.com/download" target="_blank">ngrok</a> (gratuito)</li>
+            <li>In un nuovo terminale, esegui:</li>
+          </ol>
+          <div class="code-block">ngrok http 3000</div>
+          <p>ngrok ti mostrera un URL tipo:</p>
+          <div class="code-block" style="color: var(--yellow);">https://a1b2c3d4.ngrok-free.app</div>
+          <ol start="3">
+            <li>Copia quell'URL HTTPS</li>
+            <li>Aggiorna <code>BASE_URL</code> nel tuo file <code>.env</code></li>
+            <li>Riavvia il server</li>
+          </ol>
+          <div class="hint">In produzione puoi usare un dominio fisso o deployare su Railway, Render, ecc.</div>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">6</div>
+          <div>
+            <div class="step-title">Configura il webhook Twilio</div>
+            <div class="step-subtitle">Collega il numero di telefono al server</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Vai su <a href="https://console.twilio.com/us1/develop/phone-numbers/manage/incoming" target="_blank">Twilio Console</a> &gt; Phone Numbers</li>
+            <li>Clicca sul tuo numero di telefono</li>
+            <li>Nella sezione <strong>Voice Configuration</strong>:</li>
+          </ol>
+          <table class="env-table">
+            <tr><th>Impostazione</th><th>Valore</th></tr>
+            <tr><td>A call comes in</td><td>Webhook</td></tr>
+            <tr><td>URL</td><td>https://tuo-url.ngrok-free.app/voice/incoming</td></tr>
+            <tr><td>HTTP Method</td><td>POST</td></tr>
+          </table>
+          <ol start="4">
+            <li>Clicca <strong>Save configuration</strong></li>
+          </ol>
+          <div class="hint">Opzionale: nel campo "Call status changes" puoi aggiungere l'URL <code>/voice/status</code> per tracciare la durata delle chiamate.</div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="guide-step" onclick="toggleStep(this)">
+        <div class="step-header">
+          <div class="step-number">7</div>
+          <div>
+            <div class="step-title">Testa il sistema!</div>
+            <div class="step-subtitle">Chiama il tuo numero e fai un ordine</div>
+          </div>
+          <div class="step-arrow">&#9654;</div>
+        </div>
+        <div class="step-content">
+          <ol>
+            <li>Chiama il tuo numero Twilio dal telefono</li>
+            <li>L'AI ti salutera con voce naturale (ElevenLabs)</li>
+            <li>Ordina qualcosa, ad esempio: <em>"Vorrei due pizze margherita e una birra"</em></li>
+            <li>L'AI ripetera l'ordine e chiedera conferma</li>
+            <li>Conferma con <em>"Si, confermo"</em></li>
+            <li>L'ordine apparira qui nella dashboard!</li>
+          </ol>
+          <div class="hint">Se qualcosa non funziona, controlla i log nel terminale dove gira il server &mdash; gli errori vengono mostrati li.</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -471,6 +866,24 @@
     // ===== Supabase Realtime (opzionale, se il client JS è caricato) =====
     // Per abilitare il realtime, aggiungi il client Supabase via CDN
     // e sostituisci il polling con le subscription
+
+    // ===== Guida Setup =====
+    function toggleGuide() {
+      const panel = document.getElementById('guide-panel');
+      panel.classList.toggle('open');
+      const btn = document.querySelector('.guide-toggle');
+      btn.textContent = panel.classList.contains('open') ? 'Chiudi Guida' : 'Guida Setup';
+    }
+
+    function toggleStep(stepEl) {
+      const wasExpanded = stepEl.classList.contains('expanded');
+      // Chiudi tutti gli altri step
+      document.querySelectorAll('.guide-step').forEach(s => s.classList.remove('expanded'));
+      // Toggle questo step
+      if (!wasExpanded) {
+        stepEl.classList.add('expanded');
+      }
+    }
 
     // ===== Avvio =====
     startPolling();
