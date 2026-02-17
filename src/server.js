@@ -3,8 +3,10 @@ const cors = require('cors');
 const twilio = require('twilio');
 require('dotenv').config();
 
+const path = require('path');
 const supabase = require('./supabase');
 const aiEngine = require('./ai-engine');
+const tts = require('./tts-elevenlabs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +16,27 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Serve file audio generati da ElevenLabs
+app.use('/audio', express.static(path.join(__dirname, '..', 'audio-cache')));
+
+/**
+ * Helper: genera audio con ElevenLabs e aggiunge <Play> al TwiML,
+ * con fallback su <Say> se ElevenLabs non è disponibile.
+ */
+async function addVoiceToTwiml(twimlNode, text) {
+  try {
+    const audioFile = await tts.textToSpeech(text);
+    if (audioFile) {
+      twimlNode.play(`${BASE_URL}/audio/${audioFile}`);
+      return;
+    }
+  } catch (err) {
+    console.error('ElevenLabs fallback a Say:', err.message);
+  }
+  // Fallback: voce Google Wavenet
+  twimlNode.say({ language: 'it-IT', voice: 'Google.it-IT-Wavenet-A' }, text);
+}
 
 // ============================================
 // WEBHOOK TWILIO - Chiamata in arrivo
@@ -48,10 +71,10 @@ app.post('/voice/incoming', async (req, res) => {
     action: `${BASE_URL}/voice/process`,
     method: 'POST'
   });
-  gather.say({ language: 'it-IT', voice: 'Google.it-IT-Wavenet-A' }, greeting.text);
+  await addVoiceToTwiml(gather, greeting.text);
 
   // Se nessun input, richiedi di nuovo
-  twiml.say({ language: 'it-IT' }, 'Non ho sentito nulla. Riprova.');
+  await addVoiceToTwiml(twiml, 'Non ho sentito nulla. Riprova.');
   twiml.redirect(`${BASE_URL}/voice/incoming`);
 
   res.type('text/xml');
@@ -98,10 +121,7 @@ app.post('/voice/process', async (req, res) => {
       }).eq('call_sid', callSid);
     }
 
-    twiml.say(
-      { language: 'it-IT', voice: 'Google.it-IT-Wavenet-A' },
-      aiResponse.text + ' Grazie per il suo ordine. Arrivederci!'
-    );
+    await addVoiceToTwiml(twiml, aiResponse.text + ' Grazie per il suo ordine. Arrivederci!');
     twiml.hangup();
 
     aiEngine.cleanupConversation(callSid);
@@ -112,10 +132,7 @@ app.post('/voice/process', async (req, res) => {
       transcript: aiEngine.getTranscript(callSid)
     }).eq('call_sid', callSid);
 
-    twiml.say(
-      { language: 'it-IT', voice: 'Google.it-IT-Wavenet-A' },
-      'Va bene, il suo ordine è stato annullato. Arrivederci!'
-    );
+    await addVoiceToTwiml(twiml, 'Va bene, il suo ordine è stato annullato. Arrivederci!');
     twiml.hangup();
 
     aiEngine.cleanupConversation(callSid);
@@ -128,9 +145,9 @@ app.post('/voice/process', async (req, res) => {
       action: `${BASE_URL}/voice/process`,
       method: 'POST'
     });
-    gather.say({ language: 'it-IT', voice: 'Google.it-IT-Wavenet-A' }, aiResponse.text);
+    await addVoiceToTwiml(gather, aiResponse.text);
 
-    twiml.say({ language: 'it-IT' }, 'Non ho sentito. Può ripetere?');
+    await addVoiceToTwiml(twiml, 'Non ho sentito. Può ripetere?');
     twiml.redirect(`${BASE_URL}/voice/process`);
   }
 
