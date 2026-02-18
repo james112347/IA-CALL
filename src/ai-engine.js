@@ -3,10 +3,10 @@ require('dotenv').config();
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Stato delle conversazioni attive (in memoria, per call SID)
+// Stato delle conversazioni attive (in memoria, per session ID)
 const conversations = new Map();
 
-const DEFAULT_PROMPT = `Sei l'assistente telefonico di un ristorante. Il tuo compito e' prendere ordini dai clienti al telefono.`;
+const DEFAULT_PROMPT = `Sei l'assistente vocale di un ristorante. Il tuo compito e' prendere ordini dai clienti via chat vocale.`;
 
 /**
  * Costruisce il system prompt completo per un tenant
@@ -17,7 +17,7 @@ function buildSystemPrompt(tenant) {
   if (tenant && tenant.ai_prompt) {
     prompt = tenant.ai_prompt;
   } else if (tenant) {
-    prompt = `Sei l'assistente telefonico di "${tenant.name}". Il tuo compito e' prendere ordini dai clienti al telefono.`;
+    prompt = `Sei l'assistente vocale di "${tenant.name}". Il tuo compito e' prendere ordini dai clienti via chat vocale.`;
   } else {
     prompt = DEFAULT_PROMPT;
   }
@@ -41,7 +41,7 @@ REGOLE:
 4. Chiedi il nome del cliente per l'ordine
 5. Riepilogo finale con tutti gli articoli e chiedi conferma
 6. Rispondi SEMPRE in italiano
-7. Sii conciso - le risposte verranno lette al telefono, quindi frasi brevi
+7. Sii conciso - le risposte verranno lette ad alta voce, quindi frasi brevi
 
 Quando il cliente conferma l'ordine, rispondi con un JSON alla fine del messaggio nel formato:
 ###ORDER_COMPLETE###
@@ -60,11 +60,11 @@ Se il cliente vuole annullare, rispondi con:
 }
 
 /**
- * Inizializza una nuova conversazione per una chiamata
+ * Inizializza una nuova conversazione per una sessione
  */
-function initConversation(callSid, tenant) {
+function initConversation(sessionId, tenant) {
   const systemPrompt = buildSystemPrompt(tenant);
-  conversations.set(callSid, {
+  conversations.set(sessionId, {
     messages: [{ role: 'system', content: systemPrompt }],
     tenantId: tenant ? tenant.id : null,
     orderComplete: false,
@@ -75,12 +75,12 @@ function initConversation(callSid, tenant) {
 /**
  * Processa il messaggio del cliente e genera una risposta AI
  */
-async function processMessage(callSid, userMessage, tenant) {
-  let conversation = conversations.get(callSid);
+async function processMessage(sessionId, userMessage, tenant) {
+  let conversation = conversations.get(sessionId);
 
   if (!conversation) {
-    initConversation(callSid, tenant);
-    conversation = conversations.get(callSid);
+    initConversation(sessionId, tenant);
+    conversation = conversations.get(sessionId);
   }
 
   // Aggiungi il messaggio dell'utente
@@ -144,16 +144,16 @@ async function processMessage(callSid, userMessage, tenant) {
 /**
  * Genera il saluto iniziale
  */
-async function getGreeting(callSid, tenant) {
-  initConversation(callSid, tenant);
-  return processMessage(callSid, 'Ciao, vorrei fare un ordine.', tenant);
+async function getGreeting(sessionId, tenant) {
+  initConversation(sessionId, tenant);
+  return processMessage(sessionId, 'Ciao, vorrei fare un ordine.', tenant);
 }
 
 /**
  * Ottieni il transcript completo della conversazione
  */
-function getTranscript(callSid) {
-  const conversation = conversations.get(callSid);
+function getTranscript(sessionId) {
+  const conversation = conversations.get(sessionId);
   if (!conversation) return [];
 
   return conversation.messages
@@ -164,16 +164,16 @@ function getTranscript(callSid) {
 /**
  * Ottieni il tenantId della conversazione
  */
-function getConversationTenantId(callSid) {
-  const conversation = conversations.get(callSid);
+function getConversationTenantId(sessionId) {
+  const conversation = conversations.get(sessionId);
   return conversation ? conversation.tenantId : null;
 }
 
 /**
  * Pulisci la conversazione dalla memoria
  */
-function cleanupConversation(callSid) {
-  conversations.delete(callSid);
+function cleanupConversation(sessionId) {
+  conversations.delete(sessionId);
 }
 
 module.exports = {
