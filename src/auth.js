@@ -1,13 +1,10 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const supabase = require('./supabase');
+const { tenants, users } = require('./database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ia-call-secret-change-me';
 const JWT_EXPIRES = '7d';
 
-/**
- * Genera un JWT token per un utente
- */
 function generateToken(user) {
   return jwt.sign(
     { userId: user.id, tenantId: user.tenant_id, role: user.role },
@@ -16,28 +13,20 @@ function generateToken(user) {
   );
 }
 
-/**
- * Middleware: verifica JWT e aggiunge req.user
- */
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token mancante' });
   }
-
   try {
     const token = header.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
     return res.status(401).json({ error: 'Token non valido' });
   }
 }
 
-/**
- * Middleware: solo admin
- */
 function adminOnly(req, res, next) {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Accesso negato' });
@@ -45,9 +34,6 @@ function adminOnly(req, res, next) {
   next();
 }
 
-/**
- * Genera uno slug da un nome
- */
 function slugify(text) {
   return text
     .toLowerCase()
@@ -60,9 +46,6 @@ function slugify(text) {
     .replace(/^-|-$/g, '');
 }
 
-/**
- * Registra le route di autenticazione
- */
 function registerAuthRoutes(app) {
 
   // ========================
@@ -74,67 +57,43 @@ function registerAuthRoutes(app) {
     if (!email || !password || !name || !businessName) {
       return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
     }
-
     if (password.length < 6) {
       return res.status(400).json({ error: 'La password deve avere almeno 6 caratteri' });
     }
 
-    // Controlla se l'email esiste gia
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .single();
-
+    const existing = users.getByEmail(email.toLowerCase());
     if (existing) {
       return res.status(409).json({ error: 'Email gia registrata' });
     }
 
-    // Crea il tenant
-    const slug = slugify(businessName) + '-' + Date.now().toString(36);
-    const { data: tenant, error: tenantErr } = await supabase
-      .from('tenants')
-      .insert({
+    try {
+      const slug = slugify(businessName) + '-' + Date.now().toString(36);
+      const tenant = tenants.create({
         name: businessName,
-        slug: slug,
+        slug,
         business_type: businessType || 'ristorante'
-      })
-      .select()
-      .single();
+      });
 
-    if (tenantErr) {
-      console.error('Errore creazione tenant:', tenantErr);
-      return res.status(500).json({ error: 'Errore nella registrazione' });
-    }
-
-    // Crea l'utente
-    const passwordHash = await bcrypt.hash(password, 12);
-    const { data: user, error: userErr } = await supabase
-      .from('users')
-      .insert({
+      const passwordHash = await bcrypt.hash(password, 12);
+      const user = users.create({
         tenant_id: tenant.id,
         email: email.toLowerCase(),
         password_hash: passwordHash,
-        name: name,
+        name,
         role: 'owner'
-      })
-      .select()
-      .single();
+      });
 
-    if (userErr) {
-      console.error('Errore creazione utente:', userErr);
-      // Rollback tenant
-      await supabase.from('tenants').delete().eq('id', tenant.id);
-      return res.status(500).json({ error: 'Errore nella registrazione' });
+      const token = generateToken(user);
+
+      res.status(201).json({
+        token,
+        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug, plan: tenant.plan }
+      });
+    } catch (err) {
+      console.error('Errore registrazione:', err);
+      res.status(500).json({ error: 'Errore nella registrazione' });
     }
-
-    const token = generateToken(user);
-
-    res.status(201).json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug, plan: tenant.plan }
-    });
   });
 
   // ========================
@@ -147,13 +106,8 @@ function registerAuthRoutes(app) {
       return res.status(400).json({ error: 'Email e password sono obbligatori' });
     }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*, tenants(*)')
-      .eq('email', email.toLowerCase())
-      .single();
-
-    if (error || !user) {
+    const user = users.getByEmail(email.toLowerCase());
+    if (!user) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
@@ -162,21 +116,16 @@ function registerAuthRoutes(app) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
-    // Aggiorna last_login
-    await supabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', user.id);
-
+    users.updateLastLogin(user.id);
     const token = generateToken(user);
+    const tenant = tenants.getById(user.tenant_id);
 
     res.json({
       token,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      tenant: user.tenants ? {
-        id: user.tenants.id,
-        name: user.tenants.name,
-        slug: user.tenants.slug,
-        plan: user.tenants.plan,
-        phone_number: user.tenants.phone_number,
-        status: user.tenants.status
+      tenant: tenant ? {
+        id: tenant.id, name: tenant.name, slug: tenant.slug,
+        plan: tenant.plan, status: tenant.status
       } : null
     });
   });
@@ -184,20 +133,14 @@ function registerAuthRoutes(app) {
   // ========================
   // GET /api/auth/me
   // ========================
-  app.get('/api/auth/me', authMiddleware, async (req, res) => {
-    const { data: user } = await supabase
-      .from('users')
-      .select('*, tenants(*)')
-      .eq('id', req.user.userId)
-      .single();
+  app.get('/api/auth/me', authMiddleware, (req, res) => {
+    const user = users.getById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
 
-    if (!user) {
-      return res.status(404).json({ error: 'Utente non trovato' });
-    }
-
+    const tenant = tenants.getById(user.tenant_id);
     res.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      tenant: user.tenants || null
+      tenant: tenant || null
     });
   });
 }

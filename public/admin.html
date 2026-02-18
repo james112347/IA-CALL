@@ -98,7 +98,7 @@
           <th>Attivita</th>
           <th>Owner</th>
           <th>Piano</th>
-          <th>Telefono</th>
+          <th>Link Ordini</th>
           <th>Stato</th>
           <th>Data</th>
           <th>Azioni</th>
@@ -108,22 +108,6 @@
     </table>
   </div>
 
-  <!-- PHONE MODAL -->
-  <div class="modal-overlay" id="phone-modal">
-    <div class="modal">
-      <h3>Assegna numero di telefono</h3>
-      <div class="msg" id="phone-msg"></div>
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Tenant: <strong id="phone-tenant-name"></strong></p>
-      <div class="form-group">
-        <label>Numero di telefono (es. +3902xxxxxxxx)</label>
-        <input type="text" id="phone-input" placeholder="+39...">
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-outline" onclick="closePhoneModal()">Annulla</button>
-        <button class="btn btn-primary" onclick="assignPhone()" id="phone-btn">Assegna</button>
-      </div>
-    </div>
-  </div>
 
   <script>
     const API = window.location.origin;
@@ -134,8 +118,6 @@
     if (USER.role !== 'admin') { window.location.href = '/dashboard.html'; }
 
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` };
-    let currentTenantId = null;
-
     async function loadStats() {
       try {
         const res = await fetch(`${API}/api/admin/stats`, { headers });
@@ -162,11 +144,10 @@
             <td><strong>${t.name}</strong><br><span style="color:var(--muted);font-size:0.75rem">${t.business_type}</span></td>
             <td>${owner ? `${owner.name}<br><span style="color:var(--muted);font-size:0.75rem">${owner.email}</span>` : '-'}</td>
             <td><span class="plan-badge plan-${t.plan}">${t.plan.toUpperCase()}</span></td>
-            <td>${t.phone_number || '<span style="color:var(--yellow)">Non assegnato</span>'}</td>
+            <td><a href="/ordina/${t.slug}" target="_blank" style="color:var(--accent);font-size:0.8rem">/ordina/${t.slug}</a></td>
             <td><span class="status-badge status-${t.status}">${t.status}</span></td>
             <td style="font-size:0.8rem;color:var(--muted)">${new Date(t.created_at).toLocaleDateString('it-IT')}</td>
             <td>
-              ${!t.phone_number ? `<button class="btn btn-primary btn-small" onclick="openPhoneModal('${t.id}','${t.name}')">Assegna Tel</button>` : ''}
               <select class="btn btn-small" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:0.3rem;font-size:0.75rem" onchange="changePlan('${t.id}',this.value)">
                 <option value="free" ${t.plan==='free'?'selected':''}>Free</option>
                 <option value="starter" ${t.plan==='starter'?'selected':''}>Starter</option>
@@ -186,54 +167,6 @@
     async function toggleStatus(id, status) {
       await fetch(`${API}/api/admin/tenants/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status }) });
       loadTenants(); loadStats();
-    }
-
-    function openPhoneModal(tenantId, tenantName) {
-      currentTenantId = tenantId;
-      document.getElementById('phone-tenant-name').textContent = tenantName;
-      document.getElementById('phone-input').value = '';
-      document.getElementById('phone-msg').className = 'msg';
-      document.getElementById('phone-msg').textContent = '';
-      document.getElementById('phone-modal').classList.add('active');
-    }
-
-    function closePhoneModal() {
-      document.getElementById('phone-modal').classList.remove('active');
-      currentTenantId = null;
-    }
-
-    async function assignPhone() {
-      const phone = document.getElementById('phone-input').value.trim();
-      const msgEl = document.getElementById('phone-msg');
-      const btn = document.getElementById('phone-btn');
-
-      if (!phone) { msgEl.className = 'msg error'; msgEl.textContent = 'Inserisci un numero'; return; }
-
-      btn.textContent = 'Assegnazione...';
-      btn.disabled = true;
-
-      try {
-        const res = await fetch(`${API}/api/admin/tenants/${currentTenantId}/set-phone`, {
-          method: 'POST', headers, body: JSON.stringify({ phoneNumber: phone })
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          msgEl.className = 'msg error';
-          msgEl.textContent = data.error || 'Errore';
-          return;
-        }
-
-        msgEl.className = 'msg success';
-        msgEl.textContent = `Numero ${phone} assegnato con successo!`;
-        setTimeout(() => { closePhoneModal(); loadTenants(); }, 1500);
-      } catch (err) {
-        msgEl.className = 'msg error';
-        msgEl.textContent = 'Errore di connessione';
-      } finally {
-        btn.textContent = 'Assegna';
-        btn.disabled = false;
-      }
     }
 
     function logout() {

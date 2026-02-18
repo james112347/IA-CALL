@@ -122,7 +122,7 @@
       <span class="tenant-name" id="tenant-name"></span>
       <div>
         <span class="live-dot"></span>
-        <span style="font-size:0.85rem" id="phone-display"></span>
+        <a style="font-size:0.85rem;color:var(--green);text-decoration:none" id="link-display" href="#" target="_blank"></a>
       </div>
       <button class="btn btn-outline" onclick="logout()" style="font-size:0.8rem;padding:0.4rem 0.8rem">Esci</button>
     </div>
@@ -177,9 +177,9 @@
       </div>
 
       <div class="settings-section">
-        <h3>Numero di telefono</h3>
-        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">Il numero viene assegnato dall'amministratore della piattaforma.</p>
-        <div id="phone-status-section"></div>
+        <h3>Link di ordinazione</h3>
+        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">Condividi questo link con i tuoi clienti per ricevere ordini vocali via web.</p>
+        <div id="order-link-section"></div>
       </div>
 
       <div class="settings-section">
@@ -249,10 +249,10 @@
         if (!res.ok) { logout(); return; }
         const data = await res.json();
         document.getElementById('tenant-name').textContent = data.tenant ? data.tenant.name : '';
-        if (data.tenant && data.tenant.phone_number) {
-          document.getElementById('phone-display').textContent = data.tenant.phone_number;
-        } else {
-          document.getElementById('phone-display').textContent = 'In attesa numero';
+        if (data.tenant && data.tenant.slug) {
+          const link = document.getElementById('link-display');
+          link.textContent = 'Link ordinazione';
+          link.href = `/ordina/${data.tenant.slug}`;
         }
         tenantData = data.tenant;
         loadSettings();
@@ -281,7 +281,7 @@
         const orders = await res.json();
         orders.forEach(order => {
           if (!knownOrderIds.has(order.id)) {
-            if (knownOrderIds.size > 0) showNotification(`Nuovo ordine da ${order.customer_name || order.phone_number}!`);
+            if (knownOrderIds.size > 0) showNotification(`Nuovo ordine da ${order.customer_name || 'Cliente'}!`);
             knownOrderIds.add(order.id);
           }
         });
@@ -302,12 +302,11 @@
 
     function renderOrders(orders) {
       const c = document.getElementById('orders-list');
-      if (!orders.length) { c.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><h3>Nessun ordine</h3><p>Gli ordini ricevuti via telefono appariranno qui</p></div>'; return; }
+      if (!orders.length) { c.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><h3>Nessun ordine</h3><p>Gli ordini ricevuti appariranno qui</p></div>'; return; }
       c.innerHTML = orders.map(o => `
         <div class="order-card">
           <div class="order-info">
             <h3>${o.customer_name || 'Cliente'}</h3>
-            <div class="phone">${o.phone_number}</div>
             <ul class="order-items">${(o.items||[]).map(i => `<li><span>${i.quantity}x ${i.name}</span>${i.price>0?`<span>&euro;${i.price.toFixed(2)}</span>`:''}</li>`).join('')}</ul>
             ${o.notes?`<div class="order-notes">${o.notes}</div>`:''}
             ${o.total?`<div style="font-weight:700;margin-top:0.5rem">Totale: &euro;${parseFloat(o.total).toFixed(2)}</div>`:''}
@@ -354,11 +353,14 @@
       document.getElementById('set-type').value = t.business_type || 'ristorante';
       document.getElementById('set-prompt').value = t.ai_prompt || '';
 
-      const phoneEl = document.getElementById('phone-status-section');
-      if (t.phone_number) {
-        phoneEl.innerHTML = `<div class="phone-status phone-active">Attivo: ${t.phone_number}</div>`;
-      } else {
-        phoneEl.innerHTML = `<div class="phone-status phone-pending">In attesa di assegnazione - contatta l'amministratore</div>`;
+      const linkEl = document.getElementById('order-link-section');
+      if (t.slug) {
+        const orderUrl = `${window.location.origin}/ordina/${t.slug}`;
+        linkEl.innerHTML = `
+          <div class="phone-status phone-active" style="cursor:pointer" onclick="navigator.clipboard.writeText('${orderUrl}');this.textContent='Copiato!';setTimeout(()=>this.textContent='${orderUrl}',1500)">
+            ${orderUrl}
+          </div>
+          <p style="color:var(--muted);font-size:0.8rem;margin-top:0.5rem">Clicca per copiare il link</p>`;
       }
     }
 
