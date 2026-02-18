@@ -643,10 +643,34 @@
   <script>
     const API = window.location.origin;
 
-    // Se gia loggato, vai alla dashboard
-    if (localStorage.getItem('ia_token')) {
-      window.location.href = '/dashboard.html';
-    }
+    // Se gia loggato, valida il token prima di fare redirect
+    (async function checkAuth() {
+      const token = localStorage.getItem('ia_token');
+      if (!token) return;
+      try {
+        const res = await fetch(`${API}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user && data.user.role === 'admin') {
+            window.location.href = '/admin.html';
+          } else {
+            window.location.href = '/dashboard.html';
+          }
+        } else {
+          // Token non valido, pulisci
+          localStorage.removeItem('ia_token');
+          localStorage.removeItem('ia_user');
+          localStorage.removeItem('ia_tenant');
+        }
+      } catch {
+        // Server non raggiungibile, pulisci
+        localStorage.removeItem('ia_token');
+        localStorage.removeItem('ia_user');
+        localStorage.removeItem('ia_tenant');
+      }
+    })();
 
     // ===== Modal =====
     function openModal(type) {

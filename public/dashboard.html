@@ -236,7 +236,13 @@
     let knownOrderIds = new Set();
     let tenantData = null;
 
-    if (!TOKEN) { window.location.href = '/'; }
+    if (!TOKEN) {
+      // Niente token, vai alla landing senza loop
+      localStorage.removeItem('ia_token');
+      localStorage.removeItem('ia_user');
+      localStorage.removeItem('ia_tenant');
+      window.location.replace('/');
+    }
 
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` };
 
@@ -244,7 +250,14 @@
     async function init() {
       try {
         const res = await fetch(`${API}/api/auth/me`, { headers });
-        if (!res.ok) { logout(); return; }
+        if (!res.ok) {
+          // Token invalido, pulisci e vai alla landing
+          localStorage.removeItem('ia_token');
+          localStorage.removeItem('ia_user');
+          localStorage.removeItem('ia_tenant');
+          window.location.replace('/');
+          return;
+        }
         const data = await res.json();
         document.getElementById('tenant-name').textContent = data.tenant ? data.tenant.name : '';
         if (data.tenant && data.tenant.slug) {
@@ -255,7 +268,12 @@
         tenantData = data.tenant;
         loadSettings();
         startPolling();
-      } catch { logout(); }
+      } catch {
+        localStorage.removeItem('ia_token');
+        localStorage.removeItem('ia_user');
+        localStorage.removeItem('ia_tenant');
+        window.location.replace('/');
+      }
     }
 
     // ===== TABS =====
@@ -447,7 +465,7 @@
       localStorage.removeItem('ia_token');
       localStorage.removeItem('ia_user');
       localStorage.removeItem('ia_tenant');
-      window.location.href = '/';
+      window.location.replace('/');
     }
 
     init();

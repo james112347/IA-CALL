@@ -284,6 +284,18 @@ app.get('/ordina/:slug', (req, res) => {
 });
 
 // ============================================
+// CATCH-ALL: redirect 404 alla landing
+// ============================================
+app.use((req, res) => {
+  // Se e una richiesta API, rispondi con JSON
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint non trovato' });
+  }
+  // Altrimenti redirect alla landing page
+  res.redirect('/');
+});
+
+// ============================================
 // Avvio server
 // ============================================
 app.listen(PORT, () => {

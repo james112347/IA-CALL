@@ -114,8 +114,13 @@
     const TOKEN = localStorage.getItem('ia_token');
     const USER = JSON.parse(localStorage.getItem('ia_user') || '{}');
 
-    if (!TOKEN) { window.location.href = '/'; }
-    if (USER.role !== 'admin') { window.location.href = '/dashboard.html'; }
+    if (!TOKEN) {
+      localStorage.removeItem('ia_token');
+      localStorage.removeItem('ia_user');
+      localStorage.removeItem('ia_tenant');
+      window.location.replace('/');
+    }
+    if (USER.role !== 'admin') { window.location.replace('/dashboard.html'); }
 
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` };
     async function loadStats() {
@@ -173,7 +178,7 @@
       localStorage.removeItem('ia_token');
       localStorage.removeItem('ia_user');
       localStorage.removeItem('ia_tenant');
-      window.location.href = '/';
+      window.location.replace('/');
     }
 
     loadStats();
